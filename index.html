@@ -1,46 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#b91c1c">
 <title>TM ENTERPRISE | Online Catalogue</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f7f7f7;font-family:Arial,Helvetica,sans-serif;color:#555}
-.app{max-width:1100px;margin:auto;background:#fff;min-height:100vh}
-.top{position:sticky;top:0;z-index:20;background:#d73535;padding:14px 12px 10px}
-.logo{color:#fff;font-size:22px;font-weight:800;text-align:center;margin-bottom:10px}
-.searchrow{display:flex;gap:8px}.search{flex:1;background:#fff;border:0;border-radius:10px;padding:13px 14px;font-size:16px;outline:none}
-.filters{padding:10px 12px;display:flex;gap:8px;overflow:auto;border-bottom:1px solid #eee;background:#fff}
-.filter{white-space:nowrap;border:1px solid #ddd;border-radius:20px;background:#fff;padding:8px 13px}.filter.active{background:#d73535;color:#fff;border-color:#d73535}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px}
-.card{border:1px solid #e1e1e1;border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 1px 4px #00000012}
-.photo{height:230px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid #eee}
-.photo img{width:100%;height:100%;object-fit:contain}.ph{color:#aaa;font-weight:700}
-.body{padding:11px}.cat{font-size:12px;color:#888}.name{font-size:17px;color:#9f2929;font-weight:700;line-height:1.2;margin-top:4px}
-.brand{font-size:12px;color:#777;margin-top:5px}.stock{font-size:12px;color:#26934a;font-weight:700;margin-top:6px}
-.variant{width:100%;border:0;background:#d63b3b;color:#fff;padding:11px;border-radius:20px;font-size:14px;font-weight:700;margin-top:10px}
-.price{margin-top:7px;font-size:13px;color:#666}.modalbg{display:none;position:fixed;inset:0;background:#0008;z-index:50;align-items:flex-end;justify-content:center}
-.modal{background:#fff;width:min(900px,100%);max-height:86vh;border-radius:18px 18px 0 0;padding:18px;overflow:auto}
-.close{float:right;border:0;background:#eee;border-radius:50%;width:34px;height:34px}.varrow{display:flex;justify-content:space-between;align-items:center;border:1px solid #ddd;border-radius:10px;padding:10px;margin:8px 0}
-.order{width:100%;border:0;background:#25a244;color:#fff;padding:14px;border-radius:10px;font-size:16px;font-weight:700;margin-top:12px}
-@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.grid{grid-template-columns:1fr}.photo{height:200px}.logo{font-size:19px}}
-</style></head><body>
-<div class="app"><header class="top"><div class="logo">TM ENTERPRISE — ONLINE CATALOGUE</div>
-<div class="searchrow"><input id="search" class="search" placeholder="Search products" oninput="render()"></div></header>
-<div id="filters" class="filters"></div><main id="grid" class="grid"></main></div>
+*{box-sizing:border-box}
+:root{--red:#b91c1c;--red2:#dc2626;--dark:#222;--muted:#6b7280;--line:#e5e7eb;--bg:#f7f8fa;--green:#18864b}
+body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:#222}
+button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:100vh;background:#fff}
+.top{position:sticky;top:0;z-index:40;background:#fff;border-top:5px solid var(--red);box-shadow:0 2px 12px #00000012;padding:12px 12px 10px}
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{font-size:21px;font-weight:800;color:var(--red);letter-spacing:.3px}.tag{font-size:11px;color:#777;margin-top:2px}
+.headbtn{border:1px solid #ddd;background:#fff;color:var(--red);border-radius:10px;padding:9px 11px;font-weight:700}
+.searchrow{display:flex;gap:8px;margin-top:10px}.search{width:100%;border:1px solid #ddd;border-radius:11px;padding:13px 14px;background:#fff;outline:none}.search:focus{border-color:#d97777;box-shadow:0 0 0 3px #b91c1c12}
+.cartbtn{position:relative;min-width:52px;border:0;border-radius:11px;background:var(--red);color:#fff;font-weight:800}.cartcount{position:absolute;right:-5px;top:-7px;min-width:21px;height:21px;border-radius:50%;background:#111;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.filters{padding:10px 12px;display:flex;gap:8px;overflow:auto;background:#fff;border-bottom:1px solid var(--line)}.filter{white-space:nowrap;border:1px solid #ddd;border-radius:999px;background:#fff;padding:8px 13px;color:#444}.filter.active{background:var(--red);color:#fff;border-color:var(--red)}
+.hero{padding:14px 12px 2px}.hero h1{margin:0;font-size:20px}.hero p{margin:5px 0 0;color:#777;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:12px}.card{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 3px 12px #0000000a}.photo{height:235px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid var(--line)}.photo img{width:100%;height:100%;object-fit:contain}.ph{color:#aaa;font-weight:700}
+.body{padding:12px}.cat{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px}.name{font-size:17px;color:#2b2b2b;font-weight:800;line-height:1.25;margin-top:4px}.brand{font-size:12px;color:#777;margin-top:4px}.stock{font-size:12px;color:var(--green);font-weight:800;margin-top:8px}.price{margin-top:7px;font-size:17px;font-weight:800;color:#333}.from{font-size:12px;color:#777;font-weight:600;margin-right:4px}
+.primary{width:100%;border:0;background:var(--red);color:#fff;padding:12px;border-radius:11px;font-size:14px;font-weight:800;margin-top:11px}.primary:active{transform:translateY(1px)}
+.cartbar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(720px,calc(100% - 24px));z-index:45;background:#111;color:#fff;border-radius:16px;padding:10px 12px;display:none;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 10px 30px #0004}.cartbar b{font-size:14px}.cartbar button{border:0;background:#e11d48;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800}
+.modalbg{display:none;position:fixed;inset:0;background:#0008;z-index:60;align-items:flex-end;justify-content:center}.modal{width:min(900px,100%);max-height:92vh;background:#fff;border-radius:20px 20px 0 0;padding:16px;overflow:auto}.close{float:right;border:0;background:#f1f3f5;border-radius:50%;width:36px;height:36px;font-size:22px}.modalhead{padding-right:45px}.modal h2{margin:0;font-size:23px}.modalmeta{font-size:13px;color:#777;margin-top:4px}.modalphoto{height:230px;margin:12px 0;border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden}.modalphoto img{width:100%;height:100%;object-fit:contain}
+.varrow{border:1px solid var(--line);border-radius:14px;padding:12px;margin:9px 0;background:#fff}.varmain{display:flex;justify-content:space-between;gap:10px}.varname{font-weight:800}.varsub{font-size:12px;color:#777;margin-top:3px}.varprice{text-align:right;font-weight:800;white-space:nowrap}.varstock{font-size:12px;color:var(--green);margin-top:3px}.qtyrow{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}.qtyrow button{width:34px;height:34px;border:0;border-radius:50%;background:var(--red);color:#fff;font-size:19px}.qtyrow span{min-width:26px;text-align:center;font-weight:800}.qtylabel{margin-right:auto;font-size:12px;color:#777}
+.orderbox{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}.orderrow{display:flex;justify-content:space-between;gap:10px;margin:7px 0}.grand{font-size:18px;font-weight:900;margin-top:10px}.field{width:100%;border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:8px;outline:none}.whats{width:100%;border:0;background:#1f9d55;color:#fff;padding:14px;border-radius:11px;font-size:16px;font-weight:800;margin-top:10px}.muted{color:#777;font-size:12px}.empty{padding:35px;text-align:center;color:#888}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.brand{font-size:18px}.headbtn{padding:8px 9px;font-size:12px}.grid{grid-template-columns:1fr;gap:10px;padding:10px}.photo{height:245px}.hero h1{font-size:18px}.modalphoto{height:210px}.modal{padding:14px}.cartbar{bottom:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brandrow">
+    <div><div class="brand">TM ENTERPRISE</div><div class="tag">Online Product Catalogue</div></div>
+    <button class="headbtn" onclick="shareLink()">SHARE</button>
+  </div>
+  <div class="searchrow">
+    <input id="search" class="search" placeholder="Search products, item code or brand" oninput="render()">
+    <button class="cartbtn" onclick="openCart()">🛒<span id="cartCount" class="cartcount">0</span></button>
+  </div>
+</header>
+<div id="filters" class="filters"></div>
+<section class="hero"><h1>Product Catalogue</h1><p>Select a product, choose the exact variant and quantity, then send your order through WhatsApp.</p></section>
+<main id="grid" class="grid"></main>
+</div>
+<div id="cartbar" class="cartbar"><b id="cartSummary">0 items</b><button onclick="openCart()">VIEW ORDER</button></div>
 <div id="modalbg" class="modalbg" onclick="if(event.target===this)closeModal()"><div class="modal"><button class="close" onclick="closeModal()">×</button><div id="modalcontent"></div></div></div>
 <script>
-const products=[{"sku": "1591", "cat": "HAND TOOLS", "name": "RIVET GUN PRIDE", "brand": "", "stock": 1080.0, "img": "images/1591.jpg", "variants": [{"code": "1591", "name": "RIVET GUN PRIDE", "size": "", "color": "", "model": "", "price": 700.0, "stock": 360.0}, {"code": "1592", "name": "RIVET GUN PRIDE 12\"", "size": "12\"", "color": "RED", "model": "", "price": 810.0, "stock": 360.0}, {"code": "1593", "name": "RIVET GUN PRIDE 15\"", "size": "12\"", "color": "RED", "model": "", "price": 900.0, "stock": 360.0}]}];let selectedCat='ALL';
+const products=[{"sku": "1591", "cat": "HAND TOOLS", "name": "RIVET GUN PRIDE", "brand": "", "stock": 1080.0, "img": "images/1591.jpg", "variants": [{"code": "1591", "name": "RIVET GUN PRIDE", "size": "", "color": "", "model": "", "price": 700.0, "stock": 360.0}, {"code": "1592", "name": "RIVET GUN PRIDE 12\"", "size": "12\"", "color": "RED", "model": "", "price": 810.0, "stock": 360.0}, {"code": "1593", "name": "RIVET GUN PRIDE 15\"", "size": "12\"", "color": "RED", "model": "", "price": 900.0, "stock": 360.0}]}];
+const BUSINESS_WHATSAPP='94743180661';
+let selectedCat='ALL',active=null,cart={};
 const cats=['ALL',...new Set(products.map(p=>p.cat).filter(Boolean))];
 document.getElementById('filters').innerHTML=cats.map((c,i)=>`<button class="filter ${i===0?'active':''}" onclick="setCat(this,${JSON.stringify(c)})">${escapeHtml(c)}</button>`).join('');
-function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function escapeHtml(s){return String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]))}
 function money(v){return Number(v)?`LKR ${Number(v).toLocaleString('en-LK',{minimumFractionDigits:2})}`:'Call for price'}
 function setCat(btn,c){selectedCat=c;document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
-function render(){const q=document.getElementById('search').value.toLowerCase();const list=products.filter(p=>(selectedCat==='ALL'||p.cat===selectedCat)&&(`${p.name} ${p.sku} ${p.brand}`.toLowerCase().includes(q)));document.getElementById('grid').innerHTML=list.length?list.map(p=>`<article class="card"><div class="photo">${p.img?`<img src="${p.img}" alt="">`:'<div class="ph">NO IMAGE</div>'}</div><div class="body"><div class="cat">${escapeHtml(p.cat)}</div><div class="name">${escapeHtml(p.name)}</div>${p.brand?`<div class="brand">Brand: ${escapeHtml(p.brand)}</div>`:''}<div class="stock">${p.stock>0?p.stock+' total in stock':'Out of stock'}</div><div class="price">${p.variants.length===1?money(p.variants[0].price):p.variants.length+' variants'}</div><button class="variant" onclick="showVariants('${p.sku}')">VIEW DETAILS</button></div></article>`).join(''):'<div style="grid-column:1/-1;text-align:center;padding:40px;color:#888">No products found.</div>'}
-function showVariants(sku){const p=products.find(x=>x.sku===sku);if(!p)return;document.getElementById('modalcontent').innerHTML=`<h2>${escapeHtml(p.name)}</h2><div>Brand: ${escapeHtml(p.brand||'-')} · Category: ${escapeHtml(p.cat||'-')}</div><div style="margin-top:12px">${p.variants.map(v=>`<div class="varrow"><span><b>${escapeHtml(v.name)}</b><br><small>SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}</small></span><span style="text-align:right"><b>${money(v.price)}</b><br><small>${v.stock>0?v.stock+' in stock':'Unavailable'}</small></span></div>`).join('')}</div><button class="order" onclick="sendOrder('${p.sku}')">ORDER VIA WHATSAPP</button>`;document.getElementById('modalbg').style.display='flex'}
-function sendOrder(sku){const p=products.find(x=>x.sku===sku);if(!p)return;let msg=`TM ENTERPRISE - PRODUCT ENQUIRY
-
-${p.name}
-
-`+p.variants.map(v=>`${v.code} | ${v.name} | ${money(v.price)} | Stock: ${v.stock}`).join('\n')+'\n\nPlease contact me for this product.';window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
-function closeModal(){document.getElementById('modalbg').style.display='none'}render();
-</script></body></html>
+function render(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const list=products.filter(p=>(selectedCat==='ALL'||p.cat===selectedCat)&&(`${p.name} ${p.sku} ${p.brand}`.toLowerCase().includes(q)));
+  document.getElementById('grid').innerHTML=list.length?list.map(p=>{
+    const inStock=p.stock>0, price=p.variants.length===1?money(p.variants[0].price):`From ${money(Math.min(...p.variants.map(v=>v.price).filter(Boolean)))}`;
+    return `<article class="card"><div class="photo">${p.img?`<img src="${p.img}" alt="${escapeHtml(p.name)}">`:'<div class="ph">NO IMAGE</div>'}</div><div class="body"><div class="cat">${escapeHtml(p.cat||'')}</div><div class="name">${escapeHtml(p.name)}</div>${p.brand?`<div class="brand">Brand: ${escapeHtml(p.brand)}</div>`:''}<div class="stock">${inStock?`${p.stock} total in stock`:'Out of stock'} · ${p.variants.length} variant${p.variants.length!==1?'s':''}</div><div class="price"><span class="from">${p.variants.length>1?'Starting':'Price'}</span>${price}</div><button class="primary" onclick="showVariants('${p.sku}')">${p.variants.length>1?'CHOOSE VARIANT':'VIEW PRODUCT'}</button></div></article>`}).join(''):`<div class="empty" style="grid-column:1/-1">No products found.</div>`;
+  updateCartUI();
+}
+function qtyKey(sku,i){return `${sku}|${i}`}
+function getQty(sku,i){return cart[qtyKey(sku,i)]||0}
+function changeQty(i,d){if(!active)return;const v=active.variants[i],k=qtyKey(active.sku,i);cart[k]=Math.max(0,Math.min(Number(v.stock||0),(cart[k]||0)+d));showVariants(active.sku,true);updateCartUI()}
+function showVariants(sku,keepOpen=false){
+  active=products.find(x=>x.sku===sku);if(!active)return;
+  document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto">${active.img?`<img src="${active.img}" alt="${escapeHtml(active.name)}">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${money(v.price)}<div class="varstock">${v.stock>0?`${v.stock} in stock`:'Unavailable'}</div></div></div><div class="qtyrow"><span class="qtylabel">Quantity</span><button onclick="changeQty(${i},-1)" ${v.stock<=0?'disabled':''}>−</button><span>${getQty(active.sku,i)}</span><button onclick="changeQty(${i},1)" ${v.stock<=0?'disabled':''}>+</button></div></div>`).join('')}<div class="orderbox"><div class="muted">Selected items from this product are added to your order.</div><button class="whats" onclick="openCart()">VIEW ORDER & WHATSAPP</button></div>`;
+  document.getElementById('modalbg').style.display='flex';
+  if(!keepOpen) document.getElementById('modalcontent').scrollTop=0;
+}
+function updateCartUI(){
+  let items=0,total=0;Object.entries(cart).forEach(([k,q])=>{if(!q)return;items+=q;const [sku,idx]=k.split('|');const p=products.find(x=>x.sku===sku);const v=p?.variants[Number(idx)];if(v)total+=Number(v.price||0)*q});
+  document.getElementById('cartCount').textContent=items;document.getElementById('cartSummary').textContent=`${items} item${items===1?'':'s'} · ${money(total)}`;document.getElementById('cartbar').style.display=items?'flex':'none';
+}
+function cartRows(){let rows=[],total=0;Object.entries(cart).forEach(([k,q])=>{if(!q)return;const [sku,idx]=k.split('|');const p=products.find(x=>x.sku===sku);const v=p?.variants[Number(idx)];if(!v)return;const line=Number(v.price||0)*q;total+=line;rows.push({sku,idx,p,v,q,line})});return {rows,total}}
+function openCart(){
+ const {rows,total}=cartRows();
+ document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>MY ORDER</h2><div class="modalmeta">Choose quantities in the catalogue, then send this order by WhatsApp.</div></div>${rows.length?rows.map(r=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(r.v.name)}</div><div class="varsub">${escapeHtml(r.p.name)} · SKU ${escapeHtml(r.v.code)}</div></div><div class="varprice">${money(r.line)}<div class="varstock">${r.q} × ${money(r.v.price)}</div></div></div><div class="qtyrow"><span class="qtylabel">Quantity</span><button onclick="setCartQty('${r.sku}',${r.idx},${r.q-1})">−</button><span>${r.q}</span><button onclick="setCartQty('${r.sku}',${r.idx},${r.q+1})" ${r.q>=Number(r.v.stock||0)?'disabled':''}>+</button></div></div>`).join(''):`<div class="empty">Your order is empty.</div>`}${rows.length?`<div class="orderbox"><div class="orderrow"><span>Total items</span><b>${rows.reduce((a,r)=>a+r.q,0)}</b></div><div class="orderrow grand"><span>Order Total</span><b>${money(total)}</b></div><input id="cust" class="field" placeholder="Customer / Shop name"><textarea id="addr" class="field" rows="3" placeholder="Delivery address / message"></textarea><button class="whats" onclick="sendWhatsAppOrder()">SEND ORDER VIA WHATSAPP</button></div>`:''}`;
+ document.getElementById('modalbg').style.display='flex';
+}
+function setCartQty(sku,idx,q){const p=products.find(x=>x.sku===sku),v=p?.variants[Number(idx)],k=qtyKey(sku,idx);cart[k]=Math.max(0,Math.min(Number(v?.stock||0),q));if(!cart[k])delete cart[k];updateCartUI();openCart()}
+function sendWhatsAppOrder(){
+ const {rows,total}=cartRows();if(!rows.length){alert('Your order is empty.');return}
+ const name=(document.getElementById('cust').value||'Not given').trim();const addr=(document.getElementById('addr').value||'Not given').trim();
+ let msg=`TM ENTERPRISE - NEW ORDER\n\nCUSTOMER / SHOP: ${name}\nDELIVERY / MESSAGE: ${addr}\n\nORDER ITEMS\n------------------------------\n`;
+ rows.forEach(r=>{msg+=`${r.v.code} | ${r.v.name} | ${money(r.v.price)} each | QTY: ${r.q} | ${money(r.line)}\n`});
+ msg+=`------------------------------\nORDER TOTAL: ${money(total)}\n\nThank you for your order.`;
+ window.open('https://wa.me/'+BUSINESS_WHATSAPP+'?text='+encodeURIComponent(msg),'_blank');
+}
+function shareLink(){const url=window.location.href;const msg=`TM ENTERPRISE ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
+function closeModal(){document.getElementById('modalbg').style.display='none'}
+render();
+</script>
+</body>
+</html>
