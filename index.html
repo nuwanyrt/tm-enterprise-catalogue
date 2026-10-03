@@ -22,7 +22,12 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 .primary{width:100%;border:0;background:var(--red);color:#fff;padding:12px;border-radius:11px;font-size:14px;font-weight:800;margin-top:11px}.primary:active{transform:translateY(1px)}
 .cartbar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(720px,calc(100% - 24px));z-index:45;background:#111;color:#fff;border-radius:16px;padding:10px 12px;display:none;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 10px 30px #0004}.cartbar b{font-size:14px}.cartbar button{border:0;background:#e11d48;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800}
 .modalbg{display:none;position:fixed;inset:0;background:#0008;z-index:60;align-items:flex-end;justify-content:center}.modal{width:min(900px,100%);max-height:92vh;background:#fff;border-radius:20px 20px 0 0;padding:16px;overflow:auto}.close{float:right;border:0;background:#f1f3f5;border-radius:50%;width:36px;height:36px;font-size:22px}.modalhead{padding-right:45px}.modal h2{margin:0;font-size:23px}.modalmeta{font-size:13px;color:#777;margin-top:4px}.modalphoto{height:230px;margin:12px 0;border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden}.modalphoto img{width:100%;height:100%;object-fit:contain;cursor:zoom-in}
-.zoombg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.84);z-index:100;align-items:flex-start;justify-content:center;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:auto;padding:58px 10px 74px}.zoomviewport{width:100%;min-height:100%;display:flex;align-items:flex-start;justify-content:center}.zoomcanvas{width:100%;display:flex;align-items:flex-start;justify-content:center}.zoomimg{display:block;width:auto;height:auto;max-width:100%!important;max-height:calc(100vh - 132px)!important;object-fit:contain;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35);user-select:none;-webkit-user-drag:none;touch-action:pinch-zoom}.zoomtools{position:fixed;top:10px;left:0;right:0;display:flex;justify-content:center;z-index:102;pointer-events:none}.zoomtools button{display:none}.zoomcaption{position:fixed;top:14px;left:12px;right:12px;text-align:center;color:#fff;font-size:15px;font-weight:600;text-shadow:0 2px 8px #000;z-index:103;pointer-events:none}.zoomhint{display:none}.zoomclose{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.95);color:#222;font-size:26px;line-height:44px;text-align:center;font-weight:800;z-index:104;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.zoombg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+.zoomviewport{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+.zoomcanvas{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+.zoomimg{display:block;width:auto;height:auto;max-width:calc(100vw - 20px);max-height:calc(100vh - 90px);object-fit:contain;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35);user-select:none;-webkit-user-drag:none;touch-action:none;transform:translate3d(0,0,0) scale(1);transform-origin:center center;will-change:transform}
+.zoomcaption{position:fixed;top:12px;left:12px;right:12px;text-align:center;color:#fff;font-size:15px;font-weight:600;text-shadow:0 2px 8px #000;z-index:103;pointer-events:none}
+.zoomclose{position:fixed;right:14px;top:10px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.95);color:#222;font-size:26px;line-height:44px;text-align:center;font-weight:800;z-index:104;box-shadow:0 4px 18px rgba(0,0,0,.35)}
 
 .varrow{border:1px solid var(--line);border-radius:14px;padding:12px;margin:9px 0;background:#fff}.varmain{display:flex;justify-content:space-between;gap:10px}.varname{font-weight:800}.varsub{font-size:12px;color:#777;margin-top:3px}.varprice{text-align:right;font-weight:800;white-space:nowrap}.varstock{font-size:12px;color:var(--green);margin-top:3px}.qtyrow{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}.qtyrow button{width:34px;height:34px;border:0;border-radius:50%;background:var(--red);color:#fff;font-size:19px}.qtyrow span{min-width:26px;text-align:center;font-weight:800}.qtylabel{margin-right:auto;font-size:12px;color:#777}
 .orderbox{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}.orderrow{display:flex;justify-content:space-between;gap:10px;margin:7px 0}.grand{font-size:18px;font-weight:900;margin-top:10px}.field{width:100%;border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:8px;outline:none}.whats{width:100%;border:0;background:#1f9d55;color:#fff;padding:14px;border-radius:11px;font-size:16px;font-weight:800;margin-top:10px}.muted{color:#777;font-size:12px}.empty{padding:35px;text-align:center;color:#888}
@@ -104,16 +109,21 @@ function sendWhatsAppOrder(){
 }
 function shareLink(){const url=window.location.href;const msg=`TM ENTERPRISE ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
 let currentZoomSrc='', currentZoomTitle='';
+let zoomScale=1, zoomX=0, zoomY=0, pinchStartDist=0, pinchStartScale=1, pointers=new Map(), panStartX=0, panStartY=0, panStartZoomX=0, panStartZoomY=0;
+function applyZoom(){
+  const img=document.getElementById('zoomimg');
+  img.style.transform=`translate3d(${zoomX}px,${zoomY}px,0) scale(${zoomScale})`;
+}
+function fitZoom(){zoomScale=1;zoomX=0;zoomY=0;applyZoom()}
 function openImageZoom(src,title){
   if(!src) return;
   const bg=document.getElementById('zoombg');
   const img=document.getElementById('zoomimg');
   const cap=document.getElementById('zoomcaption');
-  currentZoomSrc=src; currentZoomTitle=title||'';
-  cap.textContent=currentZoomTitle;
-  img.onload=()=>{ img.style.opacity='1'; };
-  img.style.opacity='0';
+  currentZoomSrc=src; currentZoomTitle=title||''; cap.textContent=currentZoomTitle;
+  zoomScale=1; zoomX=0; zoomY=0; pointers.clear(); pinchStartDist=0;
   img.src=src;
+  img.onload=()=>{ fitZoom(); };
   bg.style.display='flex';
   document.body.style.overflow='hidden';
 }
@@ -123,7 +133,38 @@ function closeImageZoom(){
   bg.style.display='none';
   document.body.style.overflow='';
   img.removeAttribute('src');
+  pointers.clear(); zoomScale=1; zoomX=0; zoomY=0;
 }
+function touchDistance(a,b){const dx=a.clientX-b.clientX,dy=a.clientY-b.clientY;return Math.hypot(dx,dy)}
+const zoomImgEl=document.getElementById('zoomimg');
+zoomImgEl.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches) pointers.set(t.identifier,t);
+  if(pointers.size===2){
+    const vals=[...pointers.values()]; pinchStartDist=touchDistance(vals[0],vals[1]); pinchStartScale=zoomScale;
+  } else if(pointers.size===1 && zoomScale>1){
+    const t=[...pointers.values()][0]; panStartX=t.clientX;panStartY=t.clientY;panStartZoomX=zoomX;panStartZoomY=zoomY;
+  }
+},{passive:false});
+zoomImgEl.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches) pointers.set(t.identifier,t);
+  if(pointers.size>=2){
+    const vals=[...pointers.values()].slice(0,2);
+    const d=touchDistance(vals[0],vals[1]);
+    if(pinchStartDist>0){ zoomScale=Math.max(1,Math.min(6,pinchStartScale*(d/pinchStartDist))); applyZoom(); }
+  } else if(pointers.size===1 && zoomScale>1){
+    const t=[...pointers.values()][0];
+    zoomX=panStartZoomX+(t.clientX-panStartX);
+    zoomY=panStartZoomY+(t.clientY-panStartY);
+    applyZoom();
+  }
+},{passive:false});
+zoomImgEl.addEventListener('touchend',e=>{for(const t of e.changedTouches) pointers.delete(t.identifier); if(pointers.size<2) pinchStartDist=0;},{passive:false});
+zoomImgEl.addEventListener('touchcancel',e=>{for(const t of e.changedTouches) pointers.delete(t.identifier); if(pointers.size<2) pinchStartDist=0;},{passive:false});
+zoomImgEl.addEventListener('wheel',e=>{
+  e.preventDefault(); zoomScale=Math.max(1,Math.min(6,zoomScale*(e.deltaY<0?1.12:.9))); applyZoom();
+},{passive:false});
 
 function closeModal(){document.getElementById('modalbg').style.display='none'}
 render();
