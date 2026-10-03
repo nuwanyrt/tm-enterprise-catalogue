@@ -52,7 +52,7 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
     <div class="zoomcanvas" id="zoomcanvas">
       <img id="zoomimg" class="zoomimg" alt="">
     </div>
-    <div class="zoomhint">FIT on open · Pinch with two fingers to zoom</div>
+    <div class="zoomhint">NATIVE 1:1 · Pinch to zoom · Scroll/drag to move</div>
     <div class="zoomtools">
       <button type="button" onclick="zoomStep(0.25)">+</button>
       <button type="button" onclick="showOriginalSize()">1:1</button>
@@ -147,9 +147,9 @@ function openImageZoom(src,title){
   document.getElementById('zoomcaption').textContent=title||'';
   img.onload=()=>{
     nativeW=img.naturalWidth||1; nativeH=img.naturalHeight||1;
-    // Open in FIT mode. After that, pinch with two fingers to zoom.
-    const vw=Math.max(bg.clientWidth,1), vh=Math.max(bg.clientHeight,1);
-    zoomScale=Math.min(vw/nativeW, vh/nativeH, 1);
+    const vw=Math.max(document.getElementById('zoomviewport').clientWidth,1);
+    const vh=Math.max(document.getElementById('zoomviewport').clientHeight,1);
+    zoomScale=Math.min(vw/nativeW,vh/nativeH,1);
     layoutZoom(true);
   };
   img.src=src;
