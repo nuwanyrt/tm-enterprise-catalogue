@@ -47,7 +47,7 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 </div>
 <div id="cartbar" class="cartbar"><b id="cartSummary">0 items</b><button onclick="openCart()">VIEW ORDER</button></div>
 <div id="modalbg" class="modalbg" onclick="if(event.target===this)closeModal()"><div class="modal"><button class="close" onclick="closeModal()">×</button><div id="modalcontent"></div></div></div>
-<div id="zoombg" class="zoombg" onclick="if(event.target===this)closeImageZoom()"><div class="zoomwrap" id="zoomwrap"><div class="zoomhint">Tap image: original size · pinch to zoom · drag to move</div><div class="zoomtools"><button type="button" onclick="zoomStep(0.4)">+</button><button type="button" onclick="zoomReset()">1×</button><button type="button" onclick="zoomStep(-0.4)">−</button><button type="button" onclick="closeImageZoom()">×</button></div><img id="zoomimg" class="zoomimg" alt=""><div id="zoomcaption" class="zoomcaption"></div></div></div>
+<div id="zoombg" class="zoombg" onclick="if(event.target===this)closeImageZoom()"><div class="zoomwrap" id="zoomwrap"><div class="zoomhint">Tap once to open · double-tap for original 1:1 size · pinch to zoom · drag to move</div><div class="zoomtools"><button type="button" onclick="zoomStep(0.4)">+</button><button type="button" onclick="zoomReset()">1×</button><button type="button" onclick="zoomStep(-0.4)">−</button><button type="button" onclick="closeImageZoom()">×</button></div><img id="zoomimg" class="zoomimg" alt=""><div id="zoomcaption" class="zoomcaption"></div></div></div>
 <script>
 const products=[{"sku": "1591", "cat": "HAND TOOLS", "name": "RIVET GUN PRIDE", "brand": "", "stock": 1080.0, "img": "images/1591.jpg", "variants": [{"code": "1591", "name": "RIVET GUN PRIDE", "size": "", "color": "", "model": "", "price": 700.0, "stock": 360.0}, {"code": "1592", "name": "RIVET GUN PRIDE 12\"", "size": "12\"", "color": "RED", "model": "", "price": 810.0, "stock": 360.0}, {"code": "1593", "name": "RIVET GUN PRIDE 15\"", "size": "12\"", "color": "RED", "model": "", "price": 900.0, "stock": 360.0}]}];
 const BUSINESS_WHATSAPP='94743180661';
@@ -95,33 +95,51 @@ function sendWhatsAppOrder(){
 }
 function shareLink(){const url=window.location.href;const msg=`TM ENTERPRISE ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
 let zoomScale=1,baseScale=1,zoomX=0,zoomY=0,pinchStartDist=0,pinchStartScale=1;
-function applyZoom(){const img=document.getElementById('zoomimg');img.style.transform=`translate(${zoomX}px,${zoomY}px) scale(${zoomScale})`;img.style.cursor=zoomScale>baseScale*1.01?'zoom-out':'zoom-in'}
-function fitZoomToOriginalSize(){
+function applyZoom(){
+  const img=document.getElementById('zoomimg');
+  img.style.transform=`translate(${zoomX}px,${zoomY}px) scale(${zoomScale})`;
+  img.style.cursor=zoomScale>baseScale*1.01?'zoom-out':'zoom-in';
+}
+function fitToScreen(){
   const img=document.getElementById('zoomimg');
   const vw=Math.max(320,window.innerWidth);
   const vh=Math.max(320,window.innerHeight);
-  const maxW=vw*0.96, maxH=vh*0.86;
+  const maxW=vw*0.94, maxH=vh*0.82;
   const iw=img.naturalWidth||1, ih=img.naturalHeight||1;
   baseScale=Math.min(1,maxW/iw,maxH/ih);
   zoomScale=baseScale;
   zoomX=0; zoomY=0;
   applyZoom();
 }
+function showOriginalSize(){
+  // 1:1 means one CSS pixel per source-image pixel, never an arbitrary 2x jump.
+  zoomScale=1;
+  zoomX=0; zoomY=0;
+  applyZoom();
+}
 function openImageZoom(src,title){
   if(!src)return;
   const bg=document.getElementById('zoombg'),img=document.getElementById('zoomimg');
-  img.onload=()=>{fitZoomToOriginalSize()};
+  img.onload=()=>{fitToScreen()};
   img.src=src;
   document.getElementById('zoomcaption').textContent=title||'';
   bg.style.display='flex';
   document.body.style.overflow='hidden';
 }
 function closeImageZoom(){document.getElementById('zoombg').style.display='none';document.body.style.overflow=''}
-function zoomReset(){fitZoomToOriginalSize()}
-function zoomStep(delta){zoomScale=Math.max(baseScale,Math.min(baseScale*4,zoomScale+delta));applyZoom()}
+function zoomReset(){fitToScreen()}
+function zoomStep(delta){zoomScale=Math.max(baseScale,Math.min(1.0,zoomScale+delta));applyZoom()}
 const zi=document.getElementById('zoomimg');
-zi.addEventListener('click',e=>{e.stopPropagation()});
+zi.addEventListener('click',e=>{e.stopPropagation(); if(Math.abs(zoomScale-baseScale)<0.01 && baseScale<1){ showOriginalSize(); }});
+let lastTap=0, panStartX=0, panStartY=0, panBaseX=0, panBaseY=0, isPanning=false;
 zi.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){
+    const now=Date.now();
+    if(now-lastTap<320 && Math.abs(zoomScale-baseScale)<0.01){ showOriginalSize(); e.preventDefault(); lastTap=0; return; }
+    lastTap=now;
+    panStartX=e.touches[0].clientX; panStartY=e.touches[0].clientY; panBaseX=zoomX; panBaseY=zoomY; isPanning=zoomScale>baseScale*1.01;
+  }
+
   if(e.touches.length===2){
     const a=e.touches[0],b=e.touches[1];
     pinchStartDist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
@@ -129,6 +147,11 @@ zi.addEventListener('touchstart',e=>{
   }
 },{passive:true});
 zi.addEventListener('touchmove',e=>{
+  if(e.touches.length===1 && isPanning && pinchStartDist===0){
+    zoomX=panBaseX+(e.touches[0].clientX-panStartX);
+    zoomY=panBaseY+(e.touches[0].clientY-panStartY);
+    applyZoom(); e.preventDefault(); return;
+  }
   if(e.touches.length===2 && pinchStartDist){
     const a=e.touches[0],b=e.touches[1];
     const dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
@@ -137,8 +160,8 @@ zi.addEventListener('touchmove',e=>{
     e.preventDefault();
   }
 },{passive:false});
-zi.addEventListener('touchend',e=>{if(e.touches.length<2)pinchStartDist=0},{passive:true});
-window.addEventListener('resize',()=>{if(document.getElementById('zoombg').style.display==='flex')fitZoomToOriginalSize()});
+zi.addEventListener('touchend',e=>{if(e.touches.length<2)pinchStartDist=0; if(e.touches.length===0)isPanning=false},{passive:true});
+window.addEventListener('resize',()=>{if(document.getElementById('zoombg').style.display==='flex')fitToScreen()});
 function closeModal(){document.getElementById('modalbg').style.display='none'}
 render();
 </script>
