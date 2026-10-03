@@ -47,7 +47,7 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 </div>
 <div id="cartbar" class="cartbar"><b id="cartSummary">0 items</b><button onclick="openCart()">VIEW ORDER</button></div>
 <div id="modalbg" class="modalbg" onclick="if(event.target===this)closeModal()"><div class="modal"><button class="close" onclick="closeModal()">×</button><div id="modalcontent"></div></div></div>
-<div id="zoombg" class="zoombg" onclick="if(event.target===this)closeImageZoom()"><div class="zoomwrap" id="zoomwrap"><div class="zoomhint">Original size opens immediately · pinch to zoom · drag to move · FIT returns to screen view</div><div class="zoomtools"><button type="button" onclick="zoomStep(0.35)">+</button><button type="button" onclick="showOriginalSize()">1:1</button><button type="button" onclick="fitToScreen()">FIT</button><button type="button" onclick="zoomStep(-0.35)">−</button><button type="button" onclick="closeImageZoom()">×</button></div><img id="zoomimg" class="zoomimg" alt=""><div id="zoomcaption" class="zoomcaption"></div></div></div>
+<div id="zoombg" class="zoombg" onclick="if(event.target===this)closeImageZoom()"><div class="zoomwrap" id="zoomwrap"><div class="zoomhint">Tap image → ORIGINAL SIZE · pinch to zoom · drag to move · FIT returns to screen view</div><div class="zoomtools"><button type="button" onclick="zoomStep(0.35)">+</button><button type="button" onclick="showOriginalSize()">1:1</button><button type="button" onclick="fitToScreen()">FIT</button><button type="button" onclick="zoomStep(-0.35)">−</button><button type="button" onclick="closeImageZoom()">×</button></div><img id="zoomimg" class="zoomimg" alt=""><div id="zoomcaption" class="zoomcaption"></div></div></div>
 <script>
 const products=[{"sku": "1591", "cat": "HAND TOOLS", "name": "RIVET GUN PRIDE", "brand": "", "stock": 1080.0, "img": "images/1591.jpg", "variants": [{"code": "1591", "name": "RIVET GUN PRIDE", "size": "", "color": "", "model": "", "price": 700.0, "stock": 360.0}, {"code": "1592", "name": "RIVET GUN PRIDE 12\"", "size": "12\"", "color": "RED", "model": "", "price": 810.0, "stock": 360.0}, {"code": "1593", "name": "RIVET GUN PRIDE 15\"", "size": "12\"", "color": "RED", "model": "", "price": 900.0, "stock": 360.0}]}];
 const BUSINESS_WHATSAPP='94743180661';
@@ -138,6 +138,16 @@ function closeImageZoom(){document.getElementById('zoombg').style.display='none'
 function zoomStep(delta){zoomScale=Math.max(baseScale,Math.min(4,zoomScale+delta));applyZoom()}
 let panStartX=0, panStartY=0, panBaseX=0, panBaseY=0, isPanning=false;
 const zi=document.getElementById('zoomimg');
+let lastTap=0;
+zi.addEventListener('dblclick',e=>{ e.preventDefault(); showOriginalSize(); });
+zi.addEventListener('touchend',e=>{
+  if(e.touches.length===0){
+    const now=Date.now();
+    if(now-lastTap<320){ showOriginalSize(); }
+    lastTap=now;
+  }
+},{passive:true});
+
 zi.addEventListener('touchstart',e=>{
   e.stopPropagation();
   if(e.touches.length===1){
