@@ -22,7 +22,8 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 .primary{width:100%;border:0;background:var(--red);color:#fff;padding:12px;border-radius:11px;font-size:14px;font-weight:800;margin-top:11px}.primary:active{transform:translateY(1px)}
 .cartbar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(720px,calc(100% - 24px));z-index:45;background:#111;color:#fff;border-radius:16px;padding:10px 12px;display:none;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 10px 30px #0004}.cartbar b{font-size:14px}.cartbar button{border:0;background:#e11d48;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800}
 .modalbg{display:none;position:fixed;inset:0;background:#0008;z-index:60;align-items:flex-end;justify-content:center}.modal{width:min(900px,100%);max-height:92vh;background:#fff;border-radius:20px 20px 0 0;padding:16px;overflow:auto}.close{float:right;border:0;background:#f1f3f5;border-radius:50%;width:36px;height:36px;font-size:22px}.modalhead{padding-right:45px}.modal h2{margin:0;font-size:23px}.modalmeta{font-size:13px;color:#777;margin-top:4px}.modalphoto{height:230px;margin:12px 0;border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden}.modalphoto img{width:100%;height:100%;object-fit:contain;cursor:zoom-in}
-.zoombg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:100;touch-action:none}.zoomviewport{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}.zoomcanvas{position:relative;min-width:100%;min-height:100%}.zoomimg{position:absolute;display:block;width:auto;height:auto;max-width:none!important;max-height:none!important;user-select:none;-webkit-user-drag:none;touch-action:none;object-fit:fill}.zoomtools{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:102}.zoomtools button{border:0;background:#fff;color:#222;width:42px;height:42px;border-radius:50%;font-size:21px;font-weight:800;box-shadow:0 2px 12px #0005}.zoomcaption{position:fixed;left:16px;right:16px;bottom:16px;text-align:center;color:#fff;font-size:14px;text-shadow:0 2px 8px #000;z-index:102}.zoomhint{position:fixed;left:16px;top:16px;color:#fff;background:#0008;border-radius:999px;padding:8px 11px;font-size:12px;z-index:102}
+.zoombg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.84);z-index:100;align-items:flex-start;justify-content:center;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:auto;padding:58px 10px 74px}.zoomviewport{width:100%;min-height:100%;display:flex;align-items:flex-start;justify-content:center}.zoomcanvas{width:100%;display:flex;align-items:flex-start;justify-content:center}.zoomimg{display:block;width:auto;height:auto;max-width:100%!important;max-height:calc(100vh - 132px)!important;object-fit:contain;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35);user-select:none;-webkit-user-drag:none;touch-action:pinch-zoom}.zoomtools{position:fixed;top:10px;left:0;right:0;display:flex;justify-content:center;z-index:102;pointer-events:none}.zoomtools button{display:none}.zoomcaption{position:fixed;top:14px;left:12px;right:12px;text-align:center;color:#fff;font-size:15px;font-weight:600;text-shadow:0 2px 8px #000;z-index:103;pointer-events:none}.zoomhint{display:none}.zoomclose{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.95);color:#222;font-size:26px;line-height:44px;text-align:center;font-weight:800;z-index:104;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+
 .varrow{border:1px solid var(--line);border-radius:14px;padding:12px;margin:9px 0;background:#fff}.varmain{display:flex;justify-content:space-between;gap:10px}.varname{font-weight:800}.varsub{font-size:12px;color:#777;margin-top:3px}.varprice{text-align:right;font-weight:800;white-space:nowrap}.varstock{font-size:12px;color:var(--green);margin-top:3px}.qtyrow{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}.qtyrow button{width:34px;height:34px;border:0;border-radius:50%;background:var(--red);color:#fff;font-size:19px}.qtyrow span{min-width:26px;text-align:center;font-weight:800}.qtylabel{margin-right:auto;font-size:12px;color:#777}
 .orderbox{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}.orderrow{display:flex;justify-content:space-between;gap:10px;margin:7px 0}.grand{font-size:18px;font-weight:900;margin-top:10px}.field{width:100%;border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:8px;outline:none}.whats{width:100%;border:0;background:#1f9d55;color:#fff;padding:14px;border-radius:11px;font-size:16px;font-weight:800;margin-top:10px}.muted{color:#777;font-size:12px}.empty{padding:35px;text-align:center;color:#888}
 @media (min-width:701px) and (max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.photo{height:255px}.body{padding:12px}}
@@ -52,16 +53,9 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
     <div class="zoomcanvas" id="zoomcanvas">
       <img id="zoomimg" class="zoomimg" alt="">
     </div>
-    <div class="zoomhint">NATIVE 1:1 · Pinch to zoom · Scroll/drag to move</div>
-    <div class="zoomtools">
-      <button type="button" onclick="zoomStep(0.25)">+</button>
-      <button type="button" onclick="showOriginalSize()">1:1</button>
-      <button type="button" onclick="fitToScreen()">FIT</button>
-      <button type="button" onclick="zoomStep(-0.25)">−</button>
-      <button type="button" onclick="closeImageZoom()">×</button>
-    </div>
     <div id="zoomcaption" class="zoomcaption"></div>
   </div>
+  <button type="button" class="zoomclose" onclick="closeImageZoom()">×</button>
 </div>
 <script>
 const products=[{"sku": "1591", "cat": "HAND TOOLS", "name": "RIVET GUN PRIDE", "brand": "", "stock": 1080.0, "img": "images/1591.jpg", "variants": [{"code": "1591", "name": "RIVET GUN PRIDE", "size": "", "color": "", "model": "", "price": 700.0, "stock": 360.0}, {"code": "1592", "name": "RIVET GUN PRIDE 12\"", "size": "12\"", "color": "RED", "model": "", "price": 810.0, "stock": 360.0}, {"code": "1593", "name": "RIVET GUN PRIDE 15\"", "size": "12\"", "color": "RED", "model": "", "price": 900.0, "stock": 360.0}]}];
@@ -69,8 +63,7 @@ const BUSINESS_WHATSAPP='94743180661';
 let selectedCat='ALL',active=null,cart={};
 const cats=['ALL',...new Set(products.map(p=>p.cat).filter(Boolean))];
 document.getElementById('filters').innerHTML=cats.map((c,i)=>`<button class="filter ${i===0?'active':''}" onclick="setCat(this,${JSON.stringify(c)})">${escapeHtml(c)}</button>`).join('');
-function escapeHtml(s){return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-function escapeAttr(s){return escapeHtml(String(s??'')).replace(/'/g,'&#39;')}
+function escapeHtml(s){return String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]))}
 function money(v){return Number(v)?`LKR ${Number(v).toLocaleString('en-LK',{minimumFractionDigits:2})}`:'Call for price'}
 function setCat(btn,c){selectedCat=c;document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
 function render(){
@@ -78,7 +71,7 @@ function render(){
   const list=products.filter(p=>(selectedCat==='ALL'||p.cat===selectedCat)&&(`${p.name} ${p.sku} ${p.brand}`.toLowerCase().includes(q)));
   document.getElementById('grid').innerHTML=list.length?list.map(p=>{
     const inStock=p.stock>0, price=p.variants.length===1?money(p.variants[0].price):`From ${money(Math.min(...p.variants.map(v=>v.price).filter(Boolean)))}`;
-    return `<article class="card"><div class="photo" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(p.img||'')}" data-title="${escapeAttr(p.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${p.img?`<img src="${p.img}" alt="${escapeHtml(p.name)}" loading="lazy" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div><div class="body"><div class="cat">${escapeHtml(p.cat||'')}</div><div class="name">${escapeHtml(p.name)}</div>${p.brand?`<div class="brand">Brand: ${escapeHtml(p.brand)}</div>`:''}<div class="stock">${inStock?`${p.stock} total in stock`:'Out of stock'} · ${p.variants.length} variant${p.variants.length!==1?'s':''}</div><div class="price"><span class="from">${p.variants.length>1?'Starting':'Price'}</span>${price}</div><button class="primary" onclick="showVariants('${p.sku}')">${p.variants.length>1?'CHOOSE VARIANT':'VIEW PRODUCT'}</button></div></article>`}).join(''):`<div class="empty" style="grid-column:1/-1">No products found.</div>`;
+    return `<article class="card"><div class="photo" role="button" tabindex="0" aria-label="Zoom image" onclick="openImageZoom(${JSON.stringify(p.img||'')}, ${JSON.stringify(p.name||'')})" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(${JSON.stringify(p.img||'')}, ${JSON.stringify(p.name||'')})">${p.img?`<img src="${p.img}" alt="${escapeHtml(p.name)}" loading="lazy" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div><div class="body"><div class="cat">${escapeHtml(p.cat||'')}</div><div class="name">${escapeHtml(p.name)}</div>${p.brand?`<div class="brand">Brand: ${escapeHtml(p.brand)}</div>`:''}<div class="stock">${inStock?`${p.stock} total in stock`:'Out of stock'} · ${p.variants.length} variant${p.variants.length!==1?'s':''}</div><div class="price"><span class="from">${p.variants.length>1?'Starting':'Price'}</span>${price}</div><button class="primary" onclick="showVariants('${p.sku}')">${p.variants.length>1?'CHOOSE VARIANT':'VIEW PRODUCT'}</button></div></article>`}).join(''):`<div class="empty" style="grid-column:1/-1">No products found.</div>`;
   updateCartUI();
 }
 function qtyKey(sku,i){return `${sku}|${i}`}
@@ -86,7 +79,7 @@ function getQty(sku,i){return cart[qtyKey(sku,i)]||0}
 function changeQty(i,d){if(!active)return;const v=active.variants[i],k=qtyKey(active.sku,i);cart[k]=Math.max(0,Math.min(Number(v.stock||0),(cart[k]||0)+d));showVariants(active.sku,true);updateCartUI()}
 function showVariants(sku,keepOpen=false){
   active=products.find(x=>x.sku===sku);if(!active)return;
-  document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(active.img||'')}" data-title="${escapeAttr(active.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${active.img?`<img src="${active.img}" alt="${escapeHtml(active.name)}" loading="lazy" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${money(v.price)}<div class="varstock">${v.stock>0?`${v.stock} in stock`:'Unavailable'}</div></div></div><div class="qtyrow"><span class="qtylabel">Quantity</span><button onclick="changeQty(${i},-1)" ${v.stock<=0?'disabled':''}>−</button><span>${getQty(active.sku,i)}</span><button onclick="changeQty(${i},1)" ${v.stock<=0?'disabled':''}>+</button></div></div>`).join('')}<div class="orderbox"><div class="muted">Selected items from this product are added to your order.</div><button class="whats" onclick="openCart()">VIEW ORDER & WHATSAPP</button></div>`;
+  document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" onclick="openImageZoom(${JSON.stringify(active.img||'')}, ${JSON.stringify(active.name||'')})" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(${JSON.stringify(active.img||'')}, ${JSON.stringify(active.name||'')})">${active.img?`<img src="${active.img}" alt="${escapeHtml(active.name)}" loading="lazy" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${money(v.price)}<div class="varstock">${v.stock>0?`${v.stock} in stock`:'Unavailable'}</div></div></div><div class="qtyrow"><span class="qtylabel">Quantity</span><button onclick="changeQty(${i},-1)" ${v.stock<=0?'disabled':''}>−</button><span>${getQty(active.sku,i)}</span><button onclick="changeQty(${i},1)" ${v.stock<=0?'disabled':''}>+</button></div></div>`).join('')}<div class="orderbox"><div class="muted">Selected items from this product are added to your order.</div><button class="whats" onclick="openCart()">VIEW ORDER & WHATSAPP</button></div>`;
   document.getElementById('modalbg').style.display='flex';
   if(!keepOpen) document.getElementById('modalcontent').scrollTop=0;
 }
@@ -110,76 +103,28 @@ function sendWhatsAppOrder(){
  window.open('https://wa.me/'+BUSINESS_WHATSAPP+'?text='+encodeURIComponent(msg),'_blank');
 }
 function shareLink(){const url=window.location.href;const msg=`TM ENTERPRISE ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
-let zoomScale=1, nativeW=1, nativeH=1, pinchStartDist=0, pinchStartScale=1;
-function zoomRefs(){
-  return {bg:document.getElementById('zoombg'), vp:document.getElementById('zoomviewport'), canvas:document.getElementById('zoomcanvas'), img:document.getElementById('zoomimg')};
-}
-function layoutZoom(centerScroll=true){
-  const {vp,canvas,img}=zoomRefs();
-  const vw=Math.max(vp.clientWidth,1), vh=Math.max(vp.clientHeight,1);
-  const iw=nativeW*zoomScale, ih=nativeH*zoomScale;
-  const cw=Math.max(vw,iw), ch=Math.max(vh,ih);
-  canvas.style.width=cw+'px'; canvas.style.height=ch+'px';
-  img.style.width=iw+'px'; img.style.height=ih+'px';
-  img.style.left=((cw-iw)/2)+'px'; img.style.top=((ch-ih)/2)+'px';
-  if(centerScroll){
-    requestAnimationFrame(()=>{
-      vp.scrollLeft=Math.max(0,(cw-vw)/2);
-      vp.scrollTop=Math.max(0,(ch-vh)/2);
-    });
-  }
-}
-function showOriginalSize(){
-  zoomScale=1;
-  layoutZoom(true);
-}
-function fitToScreen(){
-  const {vp}=zoomRefs();
-  const vw=Math.max(vp.clientWidth,1), vh=Math.max(vp.clientHeight,1);
-  zoomScale=Math.min(vw/nativeW,vh/nativeH,1);
-  layoutZoom(true);
-}
+let currentZoomSrc='', currentZoomTitle='';
 function openImageZoom(src,title){
-  if(!src)return;
-  const {bg,img}=zoomRefs();
-  bg.style.display='block';
-  document.body.style.overflow='hidden';
-  document.getElementById('zoomcaption').textContent=title||'';
-  img.onload=()=>{
-    nativeW=img.naturalWidth||1; nativeH=img.naturalHeight||1;
-    zoomScale=1;
-    layoutZoom(true);
-  };
+  if(!src) return;
+  const bg=document.getElementById('zoombg');
+  const img=document.getElementById('zoomimg');
+  const cap=document.getElementById('zoomcaption');
+  currentZoomSrc=src; currentZoomTitle=title||'';
+  cap.textContent=currentZoomTitle;
+  img.onload=()=>{ img.style.opacity='1'; };
+  img.style.opacity='0';
   img.src=src;
-  if(img.complete) img.onload();
+  bg.style.display='flex';
+  document.body.style.overflow='hidden';
 }
 function closeImageZoom(){
-  document.getElementById('zoombg').style.display='none';
+  const bg=document.getElementById('zoombg');
+  const img=document.getElementById('zoomimg');
+  bg.style.display='none';
   document.body.style.overflow='';
+  img.removeAttribute('src');
 }
-function zoomStep(delta){
-  zoomScale=Math.max(0.1,Math.min(8,zoomScale+delta));
-  layoutZoom(true);
-}
-const zi=document.getElementById('zoomimg');
-let pinchStart=0;
-zi.addEventListener('touchstart',e=>{
-  if(e.touches.length===2){
-    const a=e.touches[0],b=e.touches[1];
-    pinchStart=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-    pinchStartScale=zoomScale;
-  }
-},{passive:true});
-zi.addEventListener('touchmove',e=>{
-  if(e.touches.length===2 && pinchStart){
-    const a=e.touches[0],b=e.touches[1];
-    const dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-    zoomScale=Math.max(0.1,Math.min(8,pinchStartScale*(dist/pinchStart)));
-    layoutZoom(false);
-    e.preventDefault();
-  }
-},{passive:false});
-zi.addEventListener('touchend',e=>{if(e.touches.length<2)pinchStart=0},{passive:true});
+
 function closeModal(){document.getElementById('modalbg').style.display='none'}
 render();
 </script>
