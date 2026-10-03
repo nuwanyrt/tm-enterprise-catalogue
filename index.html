@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TM ENTERPRISE | Online Catalogue</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f7f7;font-family:Arial,Helvetica,sans-serif;color:#555}
+.app{max-width:1100px;margin:auto;background:#fff;min-height:100vh}
+.top{position:sticky;top:0;z-index:20;background:#d73535;padding:14px 12px 10px}
+.logo{color:#fff;font-size:22px;font-weight:800;text-align:center;margin-bottom:10px}
+.searchrow{display:flex;gap:8px}.search{flex:1;background:#fff;border:0;border-radius:10px;padding:13px 14px;font-size:16px;outline:none}
+.filters{padding:10px 12px;display:flex;gap:8px;overflow:auto;border-bottom:1px solid #eee;background:#fff}
+.filter{white-space:nowrap;border:1px solid #ddd;border-radius:20px;background:#fff;padding:8px 13px}.filter.active{background:#d73535;color:#fff;border-color:#d73535}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px}
+.card{border:1px solid #e1e1e1;border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 1px 4px #00000012}
+.photo{height:230px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid #eee}
+.photo img{width:100%;height:100%;object-fit:contain}.ph{color:#aaa;font-weight:700}
+.body{padding:11px}.cat{font-size:12px;color:#888}.name{font-size:17px;color:#9f2929;font-weight:700;line-height:1.2;margin-top:4px}
+.brand{font-size:12px;color:#777;margin-top:5px}.stock{font-size:12px;color:#26934a;font-weight:700;margin-top:6px}
+.variant{width:100%;border:0;background:#d63b3b;color:#fff;padding:11px;border-radius:20px;font-size:14px;font-weight:700;margin-top:10px}
+.price{margin-top:7px;font-size:13px;color:#666}.modalbg{display:none;position:fixed;inset:0;background:#0008;z-index:50;align-items:flex-end;justify-content:center}
+.modal{background:#fff;width:min(900px,100%);max-height:86vh;border-radius:18px 18px 0 0;padding:18px;overflow:auto}
+.close{float:right;border:0;background:#eee;border-radius:50%;width:34px;height:34px}.varrow{display:flex;justify-content:space-between;align-items:center;border:1px solid #ddd;border-radius:10px;padding:10px;margin:8px 0}
+.order{width:100%;border:0;background:#25a244;color:#fff;padding:14px;border-radius:10px;font-size:16px;font-weight:700;margin-top:12px}
+@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.grid{grid-template-columns:1fr}.photo{height:200px}.logo{font-size:19px}}
+</style></head><body>
+<div class="app"><header class="top"><div class="logo">TM ENTERPRISE — ONLINE CATALOGUE</div>
+<div class="searchrow"><input id="search" class="search" placeholder="Search products" oninput="render()"></div></header>
+<div id="filters" class="filters"></div><main id="grid" class="grid"></main></div>
+<div id="modalbg" class="modalbg" onclick="if(event.target===this)closeModal()"><div class="modal"><button class="close" onclick="closeModal()">×</button><div id="modalcontent"></div></div></div>
+<script>
+const products=[{"sku": "1591", "cat": "HAND TOOLS", "name": "RIVET GUN PRIDE", "brand": "", "stock": 1080.0, "img": "images/1591.jpg", "variants": [{"code": "1591", "name": "RIVET GUN PRIDE", "size": "", "color": "", "model": "", "price": 700.0, "stock": 360.0}, {"code": "1592", "name": "RIVET GUN PRIDE 12\"", "size": "12\"", "color": "RED", "model": "", "price": 810.0, "stock": 360.0}, {"code": "1593", "name": "RIVET GUN PRIDE 15\"", "size": "12\"", "color": "RED", "model": "", "price": 900.0, "stock": 360.0}]}];let selectedCat='ALL';
+const cats=['ALL',...new Set(products.map(p=>p.cat).filter(Boolean))];
+document.getElementById('filters').innerHTML=cats.map((c,i)=>`<button class="filter ${i===0?'active':''}" onclick="setCat(this,${JSON.stringify(c)})">${escapeHtml(c)}</button>`).join('');
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function money(v){return Number(v)?`LKR ${Number(v).toLocaleString('en-LK',{minimumFractionDigits:2})}`:'Call for price'}
+function setCat(btn,c){selectedCat=c;document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
+function render(){const q=document.getElementById('search').value.toLowerCase();const list=products.filter(p=>(selectedCat==='ALL'||p.cat===selectedCat)&&(`${p.name} ${p.sku} ${p.brand}`.toLowerCase().includes(q)));document.getElementById('grid').innerHTML=list.length?list.map(p=>`<article class="card"><div class="photo">${p.img?`<img src="${p.img}" alt="">`:'<div class="ph">NO IMAGE</div>'}</div><div class="body"><div class="cat">${escapeHtml(p.cat)}</div><div class="name">${escapeHtml(p.name)}</div>${p.brand?`<div class="brand">Brand: ${escapeHtml(p.brand)}</div>`:''}<div class="stock">${p.stock>0?p.stock+' total in stock':'Out of stock'}</div><div class="price">${p.variants.length===1?money(p.variants[0].price):p.variants.length+' variants'}</div><button class="variant" onclick="showVariants('${p.sku}')">VIEW DETAILS</button></div></article>`).join(''):'<div style="grid-column:1/-1;text-align:center;padding:40px;color:#888">No products found.</div>'}
+function showVariants(sku){const p=products.find(x=>x.sku===sku);if(!p)return;document.getElementById('modalcontent').innerHTML=`<h2>${escapeHtml(p.name)}</h2><div>Brand: ${escapeHtml(p.brand||'-')} · Category: ${escapeHtml(p.cat||'-')}</div><div style="margin-top:12px">${p.variants.map(v=>`<div class="varrow"><span><b>${escapeHtml(v.name)}</b><br><small>SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}</small></span><span style="text-align:right"><b>${money(v.price)}</b><br><small>${v.stock>0?v.stock+' in stock':'Unavailable'}</small></span></div>`).join('')}</div><button class="order" onclick="sendOrder('${p.sku}')">ORDER VIA WHATSAPP</button>`;document.getElementById('modalbg').style.display='flex'}
+function sendOrder(sku){const p=products.find(x=>x.sku===sku);if(!p)return;let msg=`TM ENTERPRISE - PRODUCT ENQUIRY
+
+${p.name}
+
+`+p.variants.map(v=>`${v.code} | ${v.name} | ${money(v.price)} | Stock: ${v.stock}`).join('\n')+'\n\nPlease contact me for this product.';window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
+function closeModal(){document.getElementById('modalbg').style.display='none'}render();
+</script></body></html>
