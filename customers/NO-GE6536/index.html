@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<title>TM ENTERPRISE | Catalogue for JUNCTION HARDWARE</title>
+<style>
+*{box-sizing:border-box}
+:root{--red:#b91c1c;--red2:#dc2626;--dark:#222;--muted:#6b7280;--line:#e5e7eb;--bg:#f7f8fa;--green:#18864b}
+body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:#222}
+button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:100vh;background:#fff}
+.top{position:sticky;top:0;z-index:40;background:#fff;border-top:5px solid var(--red);box-shadow:0 2px 12px #00000012;padding:12px 12px 10px}
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{font-size:21px;font-weight:800;color:var(--red);letter-spacing:.3px}.tag{font-size:11px;color:#777;margin-top:2px}
+.headbtn{border:1px solid #ddd;background:#fff;color:var(--red);border-radius:10px;padding:9px 11px;font-weight:700}
+.searchrow{display:flex;gap:8px;margin-top:10px}.search{width:100%;border:1px solid #ddd;border-radius:11px;padding:13px 14px;background:#fff;outline:none}.search:focus{border-color:#d97777;box-shadow:0 0 0 3px #b91c1c12}
+.cartbtn{position:relative;min-width:52px;border:0;border-radius:11px;background:var(--red);color:#fff;font-weight:800}.cartcount{position:absolute;right:-5px;top:-7px;min-width:21px;height:21px;border-radius:50%;background:#111;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.filters{padding:10px 12px;display:flex;gap:8px;overflow:auto;background:#fff;border-bottom:1px solid var(--line)}.filter{white-space:nowrap;border:1px solid #ddd;border-radius:999px;background:#fff;padding:8px 13px;color:#444}.filter.active{background:var(--red);color:#fff;border-color:var(--red)}
+.hero{padding:14px 12px 2px}.hero h1{margin:0;font-size:20px}.hero p{margin:5px 0 0;color:#777;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:12px}.card{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 3px 12px #0000000a}.photo{height:235px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid var(--line);cursor:zoom-in;touch-action:manipulation}.photo img{width:100%;height:100%;object-fit:contain;transition:transform .18s ease}.photo img:active{transform:scale(1.03)}.ph{color:#aaa;font-weight:700}
+.body{padding:12px}.cat{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px}.name{font-size:17px;color:#2b2b2b;font-weight:800;line-height:1.25;margin-top:4px}.brand{font-size:12px;color:#777;margin-top:4px}.stock{font-size:12px;color:var(--green);font-weight:800;margin-top:8px}.price{margin-top:7px;font-size:17px;font-weight:800;color:#333}.old{text-decoration:line-through;color:#888;font-size:12px;font-weight:600}.from{font-size:12px;color:#777;font-weight:600;margin-right:4px}
+.primary{width:100%;border:0;background:var(--red);color:#fff;padding:12px;border-radius:11px;font-size:14px;font-weight:800;margin-top:11px}.primary:active{transform:translateY(1px)}
+.cartbar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(720px,calc(100% - 24px));z-index:45;background:#111;color:#fff;border-radius:16px;padding:10px 12px;display:none;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 10px 30px #0004}.cartbar b{font-size:14px}.cartbar button{border:0;background:#e11d48;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800}
+.modalbg{display:none;position:fixed;inset:0;background:#0008;z-index:60;align-items:flex-end;justify-content:center}.modal{width:min(900px,100%);max-height:92vh;background:#fff;border-radius:20px 20px 0 0;padding:16px;overflow:auto}.close{float:right;border:0;background:#f1f3f5;border-radius:50%;width:36px;height:36px;font-size:22px}.modalhead{padding-right:45px}.modal h2{margin:0;font-size:23px}.modalmeta{font-size:13px;color:#777;margin-top:4px}.modalphoto{height:230px;margin:12px 0;border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden}.modalphoto img{width:100%;height:100%;object-fit:contain;cursor:zoom-in}
+.zoombg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:100;touch-action:none;align-items:flex-start;justify-content:center;overflow:hidden;-webkit-user-select:none;user-select:none}.zoomviewport{position:absolute;inset:0;overflow:hidden;touch-action:none}.zoomcanvas{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;touch-action:none}.zoomimg{position:absolute;display:block;width:auto;height:auto;max-width:none!important;max-height:none!important;user-select:none;-webkit-user-drag:none;touch-action:none;object-fit:fill;transform-origin:top left;will-change:transform}.zoomcaption,.zoomhint{display:none!important}.zoomcontrols{position:fixed;top:12px;right:12px;z-index:110;display:flex;gap:8px}.zoomcontrols button{border:0;border-radius:999px;width:44px;height:44px;background:rgba(255,255,255,.92);color:#222;font-size:14px;font-weight:800;box-shadow:0 3px 12px #0006;touch-action:manipulation}.zoomcontrols button.closezoom{font-size:24px;line-height:1}\n.varrow{border:1px solid var(--line);border-radius:14px;padding:12px;margin:9px 0;background:#fff}.varmain{display:flex;justify-content:space-between;gap:10px}.varname{font-weight:800}.varsub{font-size:12px;color:#777;margin-top:3px}.varprice{text-align:right;font-weight:800;white-space:nowrap}.varstock{font-size:12px;color:var(--green);margin-top:3px}.qtyrow{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}.qtyrow button{width:34px;height:34px;border:0;border-radius:50%;background:var(--red);color:#fff;font-size:19px}.qtyrow span{min-width:26px;text-align:center;font-weight:800}.qtylabel{margin-right:auto;font-size:12px;color:#777}
+.orderbox{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}.orderrow{display:flex;justify-content:space-between;gap:10px;margin:7px 0}.grand{font-size:18px;font-weight:900;margin-top:10px}.field{width:100%;border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:8px;outline:none}.whats{width:100%;border:0;background:#1f9d55;color:#fff;padding:14px;border-radius:11px;font-size:16px;font-weight:800;margin-top:10px}.muted{color:#777;font-size:12px}.empty{padding:35px;text-align:center;color:#888}
+@media (min-width:701px) and (max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.photo{height:255px}.body{padding:12px}}
+@media(max-width:700px){.brand{font-size:18px}.headbtn{padding:8px 9px;font-size:12px}.grid{grid-template-columns:1fr;gap:10px;padding:10px}.photo{height:245px}.hero h1{font-size:18px}.modalphoto{height:210px}.modal{padding:14px}.cartbar{bottom:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brandrow">
+    <div><div class="brand">TM ENTERPRISE</div><div class="tag">Online Product Catalogue</div></div>
+    <button class="headbtn" onclick="shareLink()">SHARE</button>
+  </div>
+  <div class="searchrow">
+    <input id="search" class="search" placeholder="Search products, item code or brand" oninput="render()">
+    <button class="cartbtn" onclick="openCart()">🛒<span id="cartCount" class="cartcount">0</span></button>
+  </div>
+</header>
+<div id="filters" class="filters"></div>
+<section class="hero"><h1>Catalogue for JUNCTION HARDWARE</h1><p>Customer price catalogue • 30% discount</p></section>
+<main id="grid" class="grid"></main>
+</div>
+<div id="cartbar" class="cartbar"><b id="cartSummary">0 items</b><button onclick="openCart()">VIEW ORDER</button></div>
+<div id="modalbg" class="modalbg" onclick="if(event.target===this)closeModal()"><div class="modal"><button class="close" onclick="closeModal()">×</button><div id="modalcontent"></div></div></div>
+<div id="zoombg" class="zoombg" onclick="if(event.target===this)closeImageZoom()">
+  <div class="zoomcontrols" aria-label="Image controls">
+    <button type="button" onclick="event.stopPropagation();fitToScreen()" aria-label="Fit image">FIT</button>
+    <button type="button" class="closezoom" onclick="event.stopPropagation();closeImageZoom()" aria-label="Close image">×</button>
+  </div>
+  <div class="zoomviewport" id="zoomviewport">
+    <div class="zoomcanvas" id="zoomcanvas">
+      <img id="zoomimg" class="zoomimg" alt="">
+    </div>
+  </div>
+</div>
+<script>
+const products=[{"sku": "1591", "cat": "HAND TOOLS", "name": "RIVET GUN PRIDE", "brand": "", "stock": 1080.0, "img": "images/1591.jpg", "variants": [{"code": "1591", "name": "RIVET GUN PRIDE", "size": "", "color": "", "model": "", "price": 490.0, "stock": 360.0, "normal_price": 700.0}, {"code": "1592", "name": "RIVET GUN PRIDE 12\"", "size": "12\"", "color": "RED", "model": "", "price": 567.0, "stock": 360.0, "normal_price": 810.0}, {"code": "1593", "name": "RIVET GUN PRIDE 15\"", "size": "12\"", "color": "RED", "model": "", "price": 630.0, "stock": 360.0, "normal_price": 900.0}]}];
+const BUSINESS_WHATSAPP='94743180661';
+const CATALOG_CUSTOMER="JUNCTION HARDWARE";
+const CATALOG_CUSTOMER_CODE="NO-GE6536";
+const CATALOG_DISCOUNT=Number(30.0);
+let selectedCat='ALL',active=null,cart={};
+const cats=['ALL',...new Set(products.map(p=>p.cat).filter(Boolean))];
+document.getElementById('filters').innerHTML=cats.map((c,i)=>`<button class="filter ${i===0?'active':''}" onclick="setCat(this,${JSON.stringify(c)})">${escapeHtml(c)}</button>`).join('');
+function escapeHtml(s){return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function escapeAttr(s){return escapeHtml(String(s??'')).replace(/'/g,'&#39;')}
+function money(v){return Number(v)?`LKR ${Number(v).toLocaleString('en-LK',{minimumFractionDigits:2})}`:'Call for price'}
+function setCat(btn,c){selectedCat=c;document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
+function render(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const list=products.filter(p=>(selectedCat==='ALL'||p.cat===selectedCat)&&(`${p.name} ${p.sku} ${p.brand}`.toLowerCase().includes(q)));
+  document.getElementById('grid').innerHTML=list.length?list.map(p=>{
+    const inStock=p.stock>0, price=p.variants.length===1?money(p.variants[0].price):`From ${money(Math.min(...p.variants.map(v=>v.price).filter(Boolean)))}`;
+    return `<article class="card"><div class="photo" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(p.img||'')}" data-title="${escapeAttr(p.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${p.img?`<img src="${p.img}" alt="${escapeHtml(p.name)}" loading="lazy" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div><div class="body"><div class="cat">${escapeHtml(p.cat||'')}</div><div class="name">${escapeHtml(p.name)}</div>${p.brand?`<div class="brand">Brand: ${escapeHtml(p.brand)}</div>`:''}<div class="stock">${inStock?`${p.stock} total in stock`:'Out of stock'} · ${p.variants.length} variant${p.variants.length!==1?'s':''}</div><div class="price"><span class="from">${p.variants.length>1?'Starting':'Price'}</span>${price}</div><button class="primary" onclick="showVariants('${p.sku}')">${p.variants.length>1?'CHOOSE VARIANT':'VIEW PRODUCT'}</button></div></article>`}).join(''):`<div class="empty" style="grid-column:1/-1">No products found.</div>`;
+  updateCartUI();
+}
+function qtyKey(sku,i){return `${sku}|${i}`}
+function getQty(sku,i){return cart[qtyKey(sku,i)]||0}
+function changeQty(i,d){if(!active)return;const v=active.variants[i],k=qtyKey(active.sku,i);cart[k]=Math.max(0,Math.min(Number(v.stock||0),(cart[k]||0)+d));showVariants(active.sku,true);updateCartUI()}
+function showVariants(sku,keepOpen=false){
+  active=products.find(x=>x.sku===sku);if(!active)return;
+  document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(active.img||'')}" data-title="${escapeAttr(active.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${active.img?`<img src="${active.img}" alt="${escapeHtml(active.name)}" loading="lazy" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${v.normal_price && Number(v.normal_price)>Number(v.price)?`<div class="old">${money(v.normal_price)}</div><div>${money(v.price)}</div>`:money(v.price)}<div class="varstock">${v.stock>0?`${v.stock} in stock`:'Unavailable'}</div></div></div><div class="qtyrow"><span class="qtylabel">Quantity</span><button onclick="changeQty(${i},-1)" ${v.stock<=0?'disabled':''}>−</button><span>${getQty(active.sku,i)}</span><button onclick="changeQty(${i},1)" ${v.stock<=0?'disabled':''}>+</button></div></div>`).join('')}<div class="orderbox"><div class="muted">Selected items from this product are added to your order.</div><button class="whats" onclick="openCart()">VIEW ORDER & WHATSAPP</button></div>`;
+  document.getElementById('modalbg').style.display='flex';
+  if(!keepOpen) document.getElementById('modalcontent').scrollTop=0;
+}
+function updateCartUI(){
+  let items=0,total=0;Object.entries(cart).forEach(([k,q])=>{if(!q)return;items+=q;const [sku,idx]=k.split('|');const p=products.find(x=>x.sku===sku);const v=p?.variants[Number(idx)];if(v)total+=Number(v.price||0)*q});
+  document.getElementById('cartCount').textContent=items;document.getElementById('cartSummary').textContent=`${items} item${items===1?'':'s'} · ${money(total)}`;document.getElementById('cartbar').style.display=items?'flex':'none';
+}
+function cartRows(){let rows=[],total=0;Object.entries(cart).forEach(([k,q])=>{if(!q)return;const [sku,idx]=k.split('|');const p=products.find(x=>x.sku===sku);const v=p?.variants[Number(idx)];if(!v)return;const line=Number(v.price||0)*q;total+=line;rows.push({sku,idx,p,v,q,line})});return {rows,total}}
+function openCart(){
+ const {rows,total}=cartRows();
+ document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>MY ORDER</h2><div class="modalmeta">Choose quantities in the catalogue, then send this order by WhatsApp.</div></div>${rows.length?rows.map(r=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(r.v.name)}</div><div class="varsub">${escapeHtml(r.p.name)} · SKU ${escapeHtml(r.v.code)}</div></div><div class="varprice">${money(r.line)}<div class="varstock">${r.q} × ${money(r.v.price)}</div></div></div><div class="qtyrow"><span class="qtylabel">Quantity</span><button onclick="setCartQty('${r.sku}',${r.idx},${r.q-1})">−</button><span>${r.q}</span><button onclick="setCartQty('${r.sku}',${r.idx},${r.q+1})" ${r.q>=Number(r.v.stock||0)?'disabled':''}>+</button></div></div>`).join(''):`<div class="empty">Your order is empty.</div>`}${rows.length?`<div class="orderbox"><div class="orderrow"><span>Total items</span><b>${rows.reduce((a,r)=>a+r.q,0)}</b></div><div class="orderrow grand"><span>Order Total</span><b>${money(total)}</b></div><input id="cust" class="field" placeholder="Customer / Shop name"><textarea id="addr" class="field" rows="3" placeholder="Delivery address / message"></textarea><button class="whats" onclick="sendWhatsAppOrder()">SEND ORDER VIA WHATSAPP</button></div>`:''}`;
+ document.getElementById('modalbg').style.display='flex';
+}
+function setCartQty(sku,idx,q){const p=products.find(x=>x.sku===sku),v=p?.variants[Number(idx)],k=qtyKey(sku,idx);cart[k]=Math.max(0,Math.min(Number(v?.stock||0),q));if(!cart[k])delete cart[k];updateCartUI();openCart()}
+function sendWhatsAppOrder(){
+ const {rows,total}=cartRows();if(!rows.length){alert('Your order is empty.');return}
+ const name=(document.getElementById('cust').value||'Not given').trim();const addr=(document.getElementById('addr').value||'Not given').trim();
+ let shownCustomer=CATALOG_CUSTOMER||name;
+ let msg=`TM ENTERPRISE - NEW ORDER\n\nCUSTOMER / SHOP: ${shownCustomer}\n${CATALOG_CUSTOMER_CODE?`CUSTOMER CODE: ${CATALOG_CUSTOMER_CODE}\n`:''}${CATALOG_DISCOUNT?`CUSTOMER DISCOUNT: ${CATALOG_DISCOUNT}%\n`:''}DELIVERY / MESSAGE: ${addr}\n\nORDER ITEMS\n------------------------------\n`;
+ rows.forEach(r=>{msg+=`${r.v.code} | ${r.v.name} | ${money(r.v.price)} each | QTY: ${r.q} | ${money(r.line)}\n`});
+ msg+=`------------------------------\nORDER TOTAL: ${money(total)}\n\nThank you for your order.`;
+ window.open('https://wa.me/'+BUSINESS_WHATSAPP+'?text='+encodeURIComponent(msg),'_blank');
+}
+function shareLink(){const url=window.location.href;const msg=`TM ENTERPRISE ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
+let zoomScale=1, fitScale=1, nativeW=1, nativeH=1;
+let panX=0, panY=0, pinchStartDist=0, pinchStartScale=1, pinchStartMidX=0, pinchStartMidY=0;
+let panStartX=0, panStartY=0, touchStartX=0, touchStartY=0, dragging=false;
+function zoomRefs(){ return {bg:document.getElementById('zoombg'), vp:document.getElementById('zoomviewport'), canvas:document.getElementById('zoomcanvas'), img:document.getElementById('zoomimg')}; }
+function clampPan(){
+  const {vp}=zoomRefs();
+  const vw=vp.clientWidth||1, vh=vp.clientHeight||1;
+  const iw=nativeW*zoomScale, ih=nativeH*zoomScale;
+  const minX = iw>vw ? vw-iw : (vw-iw)/2;
+  const maxX = iw>vw ? 0 : (vw-iw)/2;
+  const minY = ih>vh ? vh-ih : (vh-ih)/2;
+  const maxY = ih>vh ? 0 : (vh-ih)/2;
+  panX=Math.min(maxX,Math.max(minX,panX));
+  panY=Math.min(maxY,Math.max(minY,panY));
+}
+function applyZoom(){
+  const {img}=zoomRefs();
+  clampPan();
+  img.style.width=nativeW+'px';
+  img.style.height=nativeH+'px';
+  img.style.transform=`translate3d(${panX}px,${panY}px,0) scale(${zoomScale})`;
+}
+function fitToScreen(){
+  const {vp}=zoomRefs();
+  const vw=Math.max(vp.clientWidth,1), vh=Math.max(vp.clientHeight,1);
+  fitScale=Math.min(vw/nativeW,vh/nativeH,1);
+  zoomScale=fitScale;
+  const iw=nativeW*zoomScale, ih=nativeH*zoomScale;
+  panX=(vw-iw)/2; panY=(vh-ih)/2;
+  applyZoom();
+}
+function openImageZoom(src,title){
+  if(!src)return;
+  const {bg,img}=zoomRefs();
+  bg.style.display='block'; document.body.style.overflow='hidden';
+  img.onload=()=>{
+    nativeW=img.naturalWidth||1; nativeH=img.naturalHeight||1;
+    fitToScreen();
+  };
+  img.src=src;
+  if(img.complete) img.onload();
+}
+function closeImageZoom(){document.getElementById('zoombg').style.display='none';document.body.style.overflow='';}
+const zi=document.getElementById('zoomimg');
+zi.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(e.touches.length===2){
+    const a=e.touches[0],b=e.touches[1];
+    pinchStartDist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    pinchStartScale=zoomScale;
+    pinchStartMidX=(a.clientX+b.clientX)/2; pinchStartMidY=(a.clientY+b.clientY)/2;
+    dragging=false;
+  } else if(e.touches.length===1 && zoomScale>fitScale+0.001){
+    const t=e.touches[0]; touchStartX=t.clientX; touchStartY=t.clientY;
+    panStartX=panX; panStartY=panY; dragging=true;
+  }
+},{passive:false});
+zi.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(e.touches.length===2 && pinchStartDist){
+    const a=e.touches[0],b=e.touches[1];
+    const dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    const midX=(a.clientX+b.clientX)/2, midY=(a.clientY+b.clientY)/2;
+    const oldScale=zoomScale;
+    zoomScale=Math.max(fitScale,Math.min(8,pinchStartScale*(dist/pinchStartDist)));
+    const ratio=zoomScale/oldScale || 1;
+    panX = midX - (pinchStartMidX-panX)*ratio + (midX-pinchStartMidX);
+    panY = midY - (pinchStartMidY-panY)*ratio + (midY-pinchStartMidY);
+    applyZoom();
+  } else if(e.touches.length===1 && dragging){
+    const t=e.touches[0]; panX=panStartX+(t.clientX-touchStartX); panY=panStartY+(t.clientY-touchStartY); applyZoom();
+  }
+},{passive:false});
+zi.addEventListener('touchend',e=>{if(e.touches.length<2)pinchStartDist=0;if(e.touches.length===0)dragging=false;},{passive:false});
+zi.addEventListener('touchcancel',()=>{pinchStartDist=0;dragging=false},{passive:false});
+window.addEventListener('resize',()=>{if(document.getElementById('zoombg').style.display==='block') fitToScreen();});
+function closeModal(){document.getElementById('modalbg').style.display='none'}
+render();
+</script>
+</body>
+</html>
