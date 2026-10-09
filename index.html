@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <meta name="theme-color" content="#111111">
-<title>TM ENTERPRISE | Product Catalogue</title>
+<title>TM DISTRIBUTOR | Product Catalogue</title>
 <!-- Step 30: customer discount badge + separate variant rows -->
 <style>
 *{box-sizing:border-box}
@@ -33,7 +33,7 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 <div class="app">
 <header class="top">
   <div class="brandrow">
-    <div><div class="brand">TM ENTERPRISE</div><div class="tag">Online Product Catalogue</div></div>
+    <div><div class="brand">TM DISTRIBUTOR</div><div class="tag">Online Product Catalogue</div></div>
     <button class="headbtn" onclick="shareLink()">SHARE</button>
   </div>
   <div class="searchrow">
@@ -103,12 +103,12 @@ function sendWhatsAppOrder(){
  const {rows,total}=cartRows();if(!rows.length){alert('Your order is empty.');return}
  const name=(document.getElementById('cust').value||'Not given').trim();const addr=(document.getElementById('addr').value||'Not given').trim();
  let shownCustomer=CATALOG_CUSTOMER||name;
- let msg=`TM ENTERPRISE - NEW ORDER\n\nCUSTOMER / SHOP: ${shownCustomer}\n${CATALOG_CUSTOMER_CODE?`CUSTOMER CODE: ${CATALOG_CUSTOMER_CODE}\n`:''}${CATALOG_DISCOUNT?`CUSTOMER DISCOUNT: ${CATALOG_DISCOUNT}%\n`:''}DELIVERY / MESSAGE: ${addr}\n\nORDER ITEMS\n------------------------------\n`;
+ let msg=`TM DISTRIBUTOR - NEW ORDER\n\nCUSTOMER / SHOP: ${shownCustomer}\n${CATALOG_CUSTOMER_CODE?`CUSTOMER CODE: ${CATALOG_CUSTOMER_CODE}\n`:''}${CATALOG_DISCOUNT?`CUSTOMER DISCOUNT: ${CATALOG_DISCOUNT}%\n`:''}DELIVERY / MESSAGE: ${addr}\n\nORDER ITEMS\n------------------------------\n`;
  rows.forEach(r=>{msg+=`${r.v.code} | ${r.v.name} | ${money(r.v.price)} each | QTY: ${r.q} | ${money(r.line)}\n`});
  msg+=`------------------------------\nORDER TOTAL: ${money(total)}\n\nThank you for your order.`;
  window.open('https://wa.me/'+BUSINESS_WHATSAPP+'?text='+encodeURIComponent(msg),'_blank');
 }
-function shareLink(){const url=window.location.href;const msg=`TM ENTERPRISE ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
+function shareLink(){const url=window.location.href;const msg=`TM DISTRIBUTOR ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
 let zoomScale=1, fitScale=1, nativeW=1, nativeH=1;
 let panX=0, panY=0, pinchStartDist=0, pinchStartScale=1, pinchStartMidX=0, pinchStartMidY=0;
 let panStartX=0, panStartY=0, touchStartX=0, touchStartY=0, dragging=false;
