@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <!-- TM Enterprise cart-leave persistence fix: 2026-10-22 -->
+<!-- TM Enterprise WhatsApp handoff clears cart: 2026-10-22 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -313,12 +314,26 @@ function openCartView(){
 function setCartQty(sku,idx,q){const p=products.find(x=>x.sku===sku),v=p?.variants[Number(idx)],k=qtyKey(sku,idx);cart[k]=Math.max(0,Math.min(Number(v?.stock||0),q));if(!cart[k])delete cart[k];updateCartUI();openCart()}
 function sendWhatsAppOrder(){
  const {rows,total}=cartRows();if(!rows.length){alert('Your order is empty.');return}
- const name=(document.getElementById('cust').value||'Not given').trim();const addr=(document.getElementById('addr').value||'Not given').trim();
+ const name=(document.getElementById('cust')?.value||'Not given').trim();const addr=(document.getElementById('addr')?.value||'Not given').trim();
  let shownCustomer=CATALOG_CUSTOMER||name;
  let msg=`TM DISTRIBUTORS - NEW ORDER\n\nCUSTOMER / SHOP: ${shownCustomer}\n${CATALOG_CUSTOMER_CODE?`CUSTOMER CODE: ${CATALOG_CUSTOMER_CODE}\n`:''}${CATALOG_DISCOUNT?`CUSTOMER DISCOUNT: ${CATALOG_DISCOUNT}%\n`:''}DELIVERY / MESSAGE: ${addr}\n\nORDER ITEMS\n------------------------------\n`;
  rows.forEach(r=>{msg+=`${r.v.code} | ${r.v.name} | ${money(r.v.price)} each | QTY: ${r.q} | ${money(r.line)}\n`});
  msg+=`------------------------------\nORDER TOTAL: ${money(total)}\n\nThank you for your order.`;
- window.open('https://wa.me/'+BUSINESS_WHATSAPP+'?text='+encodeURIComponent(msg),'_blank');
+ const waUrl='https://wa.me/'+BUSINESS_WHATSAPP+'?text='+encodeURIComponent(msg);
+ let waWindow=null;
+ try{waWindow=window.open(waUrl,'_blank');}catch(_error){waWindow=null;}
+ if(!waWindow){
+   alert('WhatsApp could not be opened. Your cart has been kept. Please allow pop-ups or try again.');
+   return;
+ }
+ // The browser cannot detect whether the shopper finally pressed Send inside WhatsApp.
+ // Clear the web cart after the WhatsApp handoff succeeds so the next order starts empty.
+ cart={};pendingVariantQty=null;active=null;modalMode='closed';
+ persistCartState();
+ document.getElementById('modalbg').style.display='none';
+ document.getElementById('modalfooter').style.display='none';
+ syncPageScrollLock();
+ render();
 }
 function shareLink(){const url=window.location.href;const msg=`TM DISTRIBUTORS ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
 
