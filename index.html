@@ -125,7 +125,46 @@ const BUSINESS_WHATSAPP='94743180661';
 const CATALOG_CUSTOMER="";
 const CATALOG_CUSTOMER_CODE="";
 const CATALOG_DISCOUNT=Number(0.0);
-let selectedCat='ALL',availableOnly=false,active=null,cart={},modalMode='closed',pendingVariantQty=null;
+// Persist the order and any in-progress variant quantities so a phone refresh does not empty the cart.
+// Scope storage by catalogue path and customer code so different customer catalogues do not share carts.
+const CART_STORAGE_KEY='tmDistributorsCart:v1:'+window.location.pathname+':'+String(CATALOG_CUSTOMER_CODE||CATALOG_CUSTOMER||'PUBLIC').trim().toUpperCase();
+function readPersistentCart(){
+  const clean={};
+  try{
+    const saved=JSON.parse(window.localStorage.getItem(CART_STORAGE_KEY)||'null');
+    if(!saved||typeof saved!=='object')return clean;
+    const savedCart=(saved.cart&&typeof saved.cart==='object')?saved.cart:{};
+    function addQty(key,value,merge){
+      const sep=String(key).lastIndexOf('|');
+      if(sep<1)return;
+      const sku=String(key).slice(0,sep),idx=Number(String(key).slice(sep+1));
+      if(!Number.isInteger(idx)||idx<0)return;
+      const p=products.find(item=>String(item.sku)===sku),v=p&&Array.isArray(p.variants)?p.variants[idx]:null;
+      if(!v)return;
+      const max=Math.max(0,Math.floor(Number(v.stock)||0));
+      const q=Math.max(0,Math.min(max,Math.floor(Number(value)||0)));
+      if(q>0)clean[key]=merge?Math.max(Number(clean[key]||0),q):q;
+    }
+    Object.entries(savedCart).forEach(([key,value])=>addQty(key,value,false));
+    // Preserve variant selections that had not yet been confirmed into the cart when refresh happened.
+    const draft=saved.draft;
+    if(draft&&draft.sku!=null&&draft.qty&&typeof draft.qty==='object'){
+      const p=products.find(item=>String(item.sku)===String(draft.sku));
+      if(p&&Array.isArray(p.variants))p.variants.forEach((_,i)=>addQty(String(draft.sku)+'|'+i,draft.qty[String(draft.sku)+'|'+i],true));
+    }
+  }catch(_error){}
+  return clean;
+}
+let selectedCat='ALL',availableOnly=false,active=null,cart=readPersistentCart(),modalMode='closed',pendingVariantQty=null;
+function persistCartState(){
+  try{
+    const draft=(modalMode==='variants'&&active&&pendingVariantQty)?{sku:String(active.sku),qty:{...pendingVariantQty}}:null;
+    const hasCart=Object.values(cart||{}).some(q=>Number(q)>0);
+    const hasDraft=!!(draft&&Object.values(draft.qty||{}).some(q=>Number(q)>0));
+    if(hasCart||hasDraft)window.localStorage.setItem(CART_STORAGE_KEY,JSON.stringify({version:1,cart:cart||{},draft}));
+    else window.localStorage.removeItem(CART_STORAGE_KEY);
+  }catch(_error){/* Storage may be disabled in private browsing; keep the catalogue usable. */}
+}
 const cats=['ALL',...[...new Set(products.map(p=>String(p.cat||'').trim()).filter(Boolean))].sort((a,b)=>categoryRank(a)-categoryRank(b)||a.localeCompare(b,undefined,{sensitivity:'base'}))];
 document.getElementById('filters').innerHTML=cats.map((c,i)=>`<button type="button" class="filter ${i===0?'active':''}" data-cat="${escapeAttr(c)}" onclick="setCat(this,this.dataset.cat)">${escapeHtml(c)}</button>`).join('');
 function escapeHtml(s){return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
@@ -192,13 +231,14 @@ function setVariantQtyFromInput(i,raw,input){
   const v=active.variants[i];if(!v)return;
   const k=qtyKey(active.sku,i),text=String(raw??'').trim();
   const plusButton=input?.parentElement?.querySelector('button[aria-label="Increase quantity"]');
-  if(text===''){delete pendingVariantQty[k];if(plusButton)plusButton.disabled=false;return;}
+  if(text===''){delete pendingVariantQty[k];if(plusButton)plusButton.disabled=false;persistCartState();return;}
   const n=Number(text);if(!Number.isFinite(n))return;
   const max=Math.max(0,Math.floor(Number(v.stock)||0));
   const next=Math.max(0,Math.min(max,Math.floor(n)));
   if(next>0)pendingVariantQty[k]=next;else delete pendingVariantQty[k];
   if(input&&String(input.value)!==String(next))input.value=String(next);
   if(plusButton)plusButton.disabled=next>=max;
+  persistCartState();
 }
 function showVariants(sku,keepOpen=false){
   const nextActive=products.find(x=>x.sku===sku);if(!nextActive)return;
@@ -217,11 +257,12 @@ function showVariants(sku,keepOpen=false){
   document.getElementById('modalfooter').style.display='flex';
   document.getElementById('modalAction').style.display='block';
   content.scrollTop=keepOpen?previousScrollTop:0;
+  persistCartState();
   syncPageScrollLock();
 }
 function updateCartUI(){
   let items=0,total=0;Object.entries(cart).forEach(([k,q])=>{if(!q)return;items+=q;const [sku,idx]=k.split('|');const p=products.find(x=>x.sku===sku);const v=p?.variants[Number(idx)];if(v)total+=Number(v.price||0)*q});
-  document.getElementById('cartCount').textContent=items;document.getElementById('cartSummary').textContent=`${items} item${items===1?'':'s'} · ${money(total)}`;document.getElementById('cartbar').style.display=items?'flex':'none';
+  document.getElementById('cartCount').textContent=items;document.getElementById('cartSummary').textContent=`${items} item${items===1?'':'s'} · ${money(total)}`;document.getElementById('cartbar').style.display=items?'flex':'none';persistCartState();
 }
 function cartRows(){let rows=[],total=0;Object.entries(cart).forEach(([k,q])=>{if(!q)return;const [sku,idx]=k.split('|');const p=products.find(x=>x.sku===sku);const v=p?.variants[Number(idx)];if(!v)return;const line=Number(v.price||0)*q;total+=line;rows.push({sku,idx,p,v,q,line})});return {rows,total}}
 let cartConfirmContext='';
@@ -260,6 +301,7 @@ function openCart(){
 }
 function openCartView(){
  modalMode='cart';pendingVariantQty=null;
+ persistCartState();
  const {rows,total}=cartRows();
  document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>MY ORDER</h2><div class="modalmeta">Choose quantities in the catalogue, then send this order by WhatsApp.</div></div>${rows.length?rows.map(r=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(r.v.name)}</div><div class="varsub">${escapeHtml(r.p.name)} · SKU ${escapeHtml(r.v.code)}</div></div><div class="varprice">${money(r.line)}<div class="varstock order-qty-meta">${r.q} × ${money(r.v.price)}</div></div></div><div class="qtyrow"><span class="qtylabel">Quantity</span><button onclick="setCartQty('${r.sku}',${r.idx},${r.q-1})">−</button><span>${r.q}</span><button onclick="setCartQty('${r.sku}',${r.idx},${r.q+1})" ${r.q>=Number(r.v.stock||0)?'disabled':''}>+</button></div></div>`).join(''):`<div class="empty">Your order is empty.</div>`}${rows.length?`<div class="orderbox"><div class="orderrow"><span>Total items</span><b>${rows.reduce((a,r)=>a+r.q,0)}</b></div><div class="orderrow grand"><span>Order Total</span><b>${money(total)}</b></div><input id="cust" class="field" placeholder="Customer / Shop name"><textarea id="addr" class="field" rows="3" placeholder="Delivery address / message"></textarea><button class="whats" onclick="sendWhatsAppOrder()">SEND ORDER VIA WHATSAPP</button></div>`:''}`;
  document.getElementById('modalbg').style.display='flex';
@@ -318,7 +360,7 @@ function showCatalogueExitConfirm(){
   const question=document.getElementById('exitConfirmQuestion');
   const detail=document.getElementById('exitConfirmDetails');
   if(question)question.textContent=count>0?`You have ${count} item${count===1?'':'s'} selected or in your order. Leave the catalogue?`:'Leave the catalogue?';
-  if(detail)detail.textContent=count>0?'Stay to continue shopping. If you choose Leave, the catalogue will close and your current order or unsaved selections may not be kept if you reopen the link.':'Do you want to leave this catalogue?';
+  if(detail)detail.textContent=count>0?'Stay to continue shopping. Your selected items are saved in this browser and should remain if you reopen this catalogue, unless browser/site data is cleared.':'Do you want to leave this catalogue?';
   document.getElementById('exitConfirmBg').style.display='flex';
   exitConfirmOpen=true;
   const stay=document.querySelector('#exitConfirmBg .stay-catalogue');
@@ -498,6 +540,7 @@ function closeModal(){
 function closeModalWithoutSavingDraft(){
   document.getElementById('modalbg').style.display='none';
   modalMode='closed';pendingVariantQty=null;
+  persistCartState();
   syncPageScrollLock();
 }
 function updateCatalogueToolbarOffset(){
