@@ -286,6 +286,8 @@ function shareLink(){const url=window.location.href;const msg=`TM DISTRIBUTORS O
 let exitConfirmOpen=false;
 let catalogueBackGuardActive=false;
 let allowNextBackToLeave=false;
+// Suppress the browser-native unload warning only after the shopper explicitly confirms Leave.
+let allowUnloadWithoutWarning=false;
 const catalogueOriginalUrl=window.location.href;
 function pushCatalogueBackGuard(){
   try{
@@ -329,6 +331,9 @@ function stayInCatalogue(){
 function leaveCatalogue(){
   document.getElementById('exitConfirmBg').style.display='none';
   exitConfirmOpen=false;
+  // The shopper already confirmed Leave in our custom dialog; avoid a second browser prompt.
+  allowUnloadWithoutWarning=true;
+  window.setTimeout(()=>{allowUnloadWithoutWarning=false;},1500);
   // The current top entry is the guard and the next entry is this catalogue.
   // Skip both so one confirmed Leave returns to the page before the catalogue.
   catalogueBackGuardActive=false;
@@ -503,6 +508,19 @@ window.addEventListener('resize', updateCatalogueToolbarOffset, {passive:true});
 updateCatalogueToolbarOffset();
 render();
 installCatalogueBackGuard();
+
+// Refresh/reload/close protection: browsers show their own native confirmation UI.
+// Browsers intentionally do not allow custom text or custom buttons for beforeunload.
+function shouldWarnBeforePageUnload(){
+  if(allowUnloadWithoutWarning)return false;
+  if(savedCartQuantity()>0)return true;
+  return modalMode==='variants' && !!active && !!pendingVariantQty && hasVariantDraftChanges();
+}
+window.addEventListener('beforeunload',function(event){
+  if(!shouldWarnBeforePageUnload())return;
+  event.preventDefault();
+  event.returnValue='';
+});
 </script>
 </body>
 </html>
