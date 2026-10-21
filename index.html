@@ -96,8 +96,8 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 </div>
 <div id="exitConfirmBg" class="cart-confirm-bg exit-confirm-bg" style="display:none" role="presentation">
   <div class="cart-confirm-card exit-confirm-card" role="dialog" aria-modal="true" aria-labelledby="exitConfirmQuestion" aria-describedby="exitConfirmDetails">
-    <div id="exitConfirmQuestion" class="cart-confirm-question">Your order has items. Leave the catalogue?</div>
-    <div id="exitConfirmDetails" class="cart-confirm-details">Stay in the catalogue to continue shopping. Leaving may clear the order if the page reloads.</div>
+    <div id="exitConfirmQuestion" class="cart-confirm-question">You have items selected or in your order. Leave the catalogue?</div>
+    <div id="exitConfirmDetails" class="cart-confirm-details">Stay to continue shopping. Leaving may discard unsaved selections if you reopen the catalogue.</div>
     <div class="cart-confirm-actions exit-confirm-actions">
       <button type="button" class="stay-catalogue" onclick="stayInCatalogue()">Stay</button>
       <button type="button" class="leave-catalogue" onclick="leaveCatalogue()">Leave</button>
@@ -296,12 +296,27 @@ function pushCatalogueBackGuard(){
 function savedCartQuantity(){
   return Object.values(cart||{}).reduce((sum,q)=>sum+Math.max(0,Number(q)||0),0);
 }
+// Include newly selected quantities in the Back warning, even before the shopper
+// has confirmed them into the saved cart. Existing saved quantities are counted
+// only once; lowering a draft does not remove an already-saved cart line.
+function effectiveOrderQuantity(){
+  let total=savedCartQuantity();
+  if(modalMode==='variants'&&active&&pendingVariantQty){
+    active.variants.forEach((_,i)=>{
+      const key=qtyKey(active.sku,i);
+      const saved=Math.max(0,Number(cart[key]||0));
+      const draft=Math.max(0,Number(pendingVariantQty[key]||0));
+      total+=Math.max(0,draft-saved);
+    });
+  }
+  return total;
+}
 function showCatalogueExitConfirm(){
-  const count=savedCartQuantity();
+  const count=effectiveOrderQuantity();
   const question=document.getElementById('exitConfirmQuestion');
   const detail=document.getElementById('exitConfirmDetails');
-  if(question)question.textContent=count>0?`You have ${count} item${count===1?'':'s'} in your order. Leave the catalogue?`:'Leave the catalogue?';
-  if(detail)detail.textContent=count>0?'Stay to continue shopping with your current order. Leaving may clear the order if the catalogue reloads.':'Do you want to leave this catalogue?';
+  if(question)question.textContent=count>0?`You have ${count} item${count===1?'':'s'} selected or in your order. Leave the catalogue?`:'Leave the catalogue?';
+  if(detail)detail.textContent=count>0?'Stay to continue shopping. If you choose Leave, the catalogue will close and your current order or unsaved selections may not be kept if you reopen the link.':'Do you want to leave this catalogue?';
   document.getElementById('exitConfirmBg').style.display='flex';
   exitConfirmOpen=true;
   const stay=document.querySelector('#exitConfirmBg .stay-catalogue');
@@ -324,7 +339,8 @@ function handleCataloguePopState(){
   if(allowNextBackToLeave){
     allowNextBackToLeave=false;
     catalogueBackGuardActive=false;
-    // First Back removes the guard entry; perform the user's confirmed Back once more.
+    // The confirmation already consumed one guard navigation. Complete the
+    // confirmed Leave by returning to the page before this catalogue.
     window.setTimeout(()=>history.back(),0);
     return;
   }
@@ -335,29 +351,32 @@ function handleCataloguePopState(){
   const menu=document.getElementById('categoryMenu');
   const menuOpen=!!menu&&!menu.hidden;
   const modalOpen=document.getElementById('modalbg')?.style.display==='flex';
-  const hasSavedItems=savedCartQuantity()>0;
 
-  // If a sub-panel is open, the first hardware Back closes that panel first.
-  if(zoomOpen||cartConfirmOpenNow||exitConfirmOpen||menuOpen||modalOpen){
+  // Back closes image zoom/filter panels first; it should not leave the page.
+  if(zoomOpen||cartConfirmOpenNow||exitConfirmOpen||menuOpen){
     pushCatalogueBackGuard();
     if(zoomOpen){closeImageZoom();return;}
     if(cartConfirmOpenNow||exitConfirmOpen)return;
     if(menuOpen){closeCategoryMenu();return;}
-    if(modalOpen){
-      if(modalMode==='variants')closeModal();
-      else closeModalWithoutSavingDraft();
-      return;
-    }
   }
 
-  if(hasSavedItems){
+  // Once any saved or newly selected quantity exists, show the Leave/Stay
+  // confirmation before navigating away, even if the product modal is open.
+  if(effectiveOrderQuantity()>0){
     pushCatalogueBackGuard();
     showCatalogueExitConfirm();
     return;
   }
 
-  // No order to protect: make a single phone Back behave like a normal Back,
-  // rather than merely consuming the extra guard entry.
+  // No order quantities to protect. A normal Back can close an empty modal;
+  // otherwise allow the browser to return to the previous page.
+  if(modalOpen){
+    pushCatalogueBackGuard();
+    if(modalMode==='variants')closeModal();
+    else closeModalWithoutSavingDraft();
+    return;
+  }
+
   catalogueBackGuardActive=false;
   window.setTimeout(()=>history.back(),0);
 }
