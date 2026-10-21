@@ -48,6 +48,10 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 .cart-confirm-actions button{border-radius:10px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;min-width:76px}
 .cart-confirm-ok{border:1px solid var(--red);background:var(--red);color:#fff}
 .cart-confirm-cancel{border:1px solid #d1d5db;background:#f3f4f6;color:#222}
+.exit-confirm-bg{z-index:230}
+.exit-confirm-card{width:min(410px,100%)}
+.exit-confirm-actions .stay-catalogue{border:1px solid #d1d5db;background:#f3f4f6;color:#222}
+.exit-confirm-actions .leave-catalogue{border:1px solid var(--red);background:var(--red);color:#fff}
 @media(max-width:700px){.cart-confirm-card{padding:18px}.cart-confirm-question{font-size:16px}}
 @media (min-width:701px) and (max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.photo{height:255px}.body{padding:12px}}
 @media(max-width:700px){.site-logo{width:48px;height:30px}.site-title{font-size:15px}.headbtn{padding:8px 9px;font-size:12px}.filter-menu-toggle{width:48px;height:40px;min-width:48px}.grid{grid-template-columns:1fr;gap:10px;padding:10px}.photo{height:245px}.hero h1{font-size:18px}.modalphoto{height:210px}.modal{padding:14px 14px 0}.modalfooter{padding-bottom:calc(4px + env(safe-area-inset-bottom))}.cartbar{bottom:10px}.availability-row{padding:7px 12px 3px}.availability-row.header-availability-row{padding:8px 0 0}.availability-toggle{padding:8px 10px;font-size:12px}.category-menu{right:8px;width:calc(100vw - 16px);max-height:min(62vh,470px);max-height:min(62dvh,470px);padding:10px}.category-menu .filters{grid-template-columns:repeat(2,minmax(0,1fr))}.catalogue-toolbar{box-shadow:0 3px 10px #0002}}
@@ -87,6 +91,16 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
     <div class="cart-confirm-actions">
       <button type="button" class="cart-confirm-ok" onclick="resolveCartConfirm(true)">OK</button>
       <button type="button" class="cart-confirm-cancel" onclick="resolveCartConfirm(false)">Cancel</button>
+    </div>
+  </div>
+</div>
+<div id="exitConfirmBg" class="cart-confirm-bg exit-confirm-bg" style="display:none" role="presentation">
+  <div class="cart-confirm-card exit-confirm-card" role="dialog" aria-modal="true" aria-labelledby="exitConfirmQuestion" aria-describedby="exitConfirmDetails">
+    <div id="exitConfirmQuestion" class="cart-confirm-question">Your order has items. Leave the catalogue?</div>
+    <div id="exitConfirmDetails" class="cart-confirm-details">Stay in the catalogue to continue shopping. Leaving may clear the order if the page reloads.</div>
+    <div class="cart-confirm-actions exit-confirm-actions">
+      <button type="button" class="stay-catalogue" onclick="stayInCatalogue()">Stay</button>
+      <button type="button" class="leave-catalogue" onclick="leaveCatalogue()">Leave</button>
     </div>
   </div>
 </div>
@@ -198,7 +212,7 @@ function showVariants(sku,keepOpen=false){
     active=nextActive;
   }
   modalMode='variants';
-  content.innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(active.img||'')}" data-title="${escapeAttr(active.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${active.img?`<img src="${active.img}" alt="${escapeHtml(active.name)}" loading="lazy" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="variantNo">Variant ${i+1} of ${active.variants.length}</div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${v.normal_price && Number(v.normal_price)>Number(v.price)?`<div class="discountedPrice"><div class="discountLine"><span class="discountBadge">${Number(v.discount_percent ?? CATALOG_DISCOUNT)}%</span><span class="newPrice">${money(v.price)}</span></div><div class="old">${money(v.normal_price)}</div></div>`:`<div class="newPrice">${money(v.price)}</div>`}<div class="varstock ${v.stock>0?'':'out-of-stock'}">${v.stock>0?`${v.stock} in stock`:'Out of Stock'}</div></div></div>${Number(v.stock||0)>0?`<div class="qtyrow"><span class="qtylabel">Add to Cart</span><button type="button" aria-label="Decrease quantity" onclick="changeQty(${i},-1)">−</button><input class="qty-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${Math.max(0,Math.floor(Number(v.stock)||0))}" step="1" aria-label="Quantity for ${escapeAttr(v.code)}" value="${getQty(active.sku,i)}" oninput="setVariantQtyFromInput(${i},this.value,this)" onkeydown="if(event.key==='Enter'){this.blur()}"><button type="button" aria-label="Increase quantity" onclick="changeQty(${i},1)" ${getQty(active.sku,i)>=Math.max(0,Math.floor(Number(v.stock)||0))?'disabled':''}>+</button></div>`:''}</div>`).join('')}<div class="muted" style="padding:8px 2px 14px">Choose quantities, then use Close or VIEW ORDER & WHATSAPP to decide whether to save them to your order.</div>`;
+  content.innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(active.img||'')}" data-title="${escapeAttr(active.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${active.img?`<img src="${active.img}" alt="${escapeHtml(active.name)}" loading="lazy" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="variantNo">Variant ${i+1} of ${active.variants.length}</div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${v.normal_price && Number(v.normal_price)>Number(v.price)?`<div class="discountedPrice"><div class="discountLine"><span class="discountBadge">${CATALOG_DISCOUNT}%</span><span class="newPrice">${money(v.price)}</span></div><div class="old">${money(v.normal_price)}</div></div>`:`<div class="newPrice">${money(v.price)}</div>`}<div class="varstock ${v.stock>0?'':'out-of-stock'}">${v.stock>0?`${v.stock} in stock`:'Out of Stock'}</div></div></div>${Number(v.stock||0)>0?`<div class="qtyrow"><span class="qtylabel">Add to Cart</span><button type="button" aria-label="Decrease quantity" onclick="changeQty(${i},-1)">−</button><input class="qty-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${Math.max(0,Math.floor(Number(v.stock)||0))}" step="1" aria-label="Quantity for ${escapeAttr(v.code)}" value="${getQty(active.sku,i)}" oninput="setVariantQtyFromInput(${i},this.value,this)" onkeydown="if(event.key==='Enter'){this.blur()}"><button type="button" aria-label="Increase quantity" onclick="changeQty(${i},1)" ${getQty(active.sku,i)>=Math.max(0,Math.floor(Number(v.stock)||0))?'disabled':''}>+</button></div>`:''}</div>`).join('')}<div class="muted" style="padding:8px 2px 14px">Choose quantities, then use Close or VIEW ORDER & WHATSAPP to decide whether to save them to your order.</div>`;
   document.getElementById('modalbg').style.display='flex';
   document.getElementById('modalfooter').style.display='flex';
   document.getElementById('modalAction').style.display='block';
@@ -264,6 +278,95 @@ function sendWhatsAppOrder(){
  window.open('https://wa.me/'+BUSINESS_WHATSAPP+'?text='+encodeURIComponent(msg),'_blank');
 }
 function shareLink(){const url=window.location.href;const msg=`TM DISTRIBUTORS ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
+
+// Android/browser Back confirmation once the shopper has an order in progress.
+// A guard entry is added when this catalogue loads. If no cart items exist, one
+// Back action is passed through to the previous page; with saved items, a custom
+// in-page dialog offers Stay or Leave.
+let exitConfirmOpen=false;
+let catalogueBackGuardActive=false;
+let allowNextBackToLeave=false;
+const catalogueOriginalUrl=window.location.href;
+function pushCatalogueBackGuard(){
+  try{
+    history.pushState({tmDistributorCatalogueBackGuard:true, stamp:Date.now()},'',catalogueOriginalUrl);
+    catalogueBackGuardActive=true;
+  }catch(_error){}
+}
+function savedCartQuantity(){
+  return Object.values(cart||{}).reduce((sum,q)=>sum+Math.max(0,Number(q)||0),0);
+}
+function showCatalogueExitConfirm(){
+  const count=savedCartQuantity();
+  const question=document.getElementById('exitConfirmQuestion');
+  const detail=document.getElementById('exitConfirmDetails');
+  if(question)question.textContent=count>0?`You have ${count} item${count===1?'':'s'} in your order. Leave the catalogue?`:'Leave the catalogue?';
+  if(detail)detail.textContent=count>0?'Stay to continue shopping with your current order. Leaving may clear the order if the catalogue reloads.':'Do you want to leave this catalogue?';
+  document.getElementById('exitConfirmBg').style.display='flex';
+  exitConfirmOpen=true;
+  const stay=document.querySelector('#exitConfirmBg .stay-catalogue');
+  if(stay)stay.focus();
+}
+function stayInCatalogue(){
+  document.getElementById('exitConfirmBg').style.display='none';
+  exitConfirmOpen=false;
+}
+function leaveCatalogue(){
+  document.getElementById('exitConfirmBg').style.display='none';
+  exitConfirmOpen=false;
+  // The current top entry is the guard and the next entry is this catalogue.
+  // Skip both so one confirmed Leave returns to the page before the catalogue.
+  catalogueBackGuardActive=false;
+  allowNextBackToLeave=true;
+  history.back();
+}
+function handleCataloguePopState(){
+  if(allowNextBackToLeave){
+    allowNextBackToLeave=false;
+    catalogueBackGuardActive=false;
+    // First Back removes the guard entry; perform the user's confirmed Back once more.
+    window.setTimeout(()=>history.back(),0);
+    return;
+  }
+  if(!catalogueBackGuardActive)return;
+
+  const zoomOpen=document.getElementById('zoombg')?.style.display==='block';
+  const cartConfirmOpenNow=document.getElementById('cartConfirmBg')?.style.display==='flex';
+  const menu=document.getElementById('categoryMenu');
+  const menuOpen=!!menu&&!menu.hidden;
+  const modalOpen=document.getElementById('modalbg')?.style.display==='flex';
+  const hasSavedItems=savedCartQuantity()>0;
+
+  // If a sub-panel is open, the first hardware Back closes that panel first.
+  if(zoomOpen||cartConfirmOpenNow||exitConfirmOpen||menuOpen||modalOpen){
+    pushCatalogueBackGuard();
+    if(zoomOpen){closeImageZoom();return;}
+    if(cartConfirmOpenNow||exitConfirmOpen)return;
+    if(menuOpen){closeCategoryMenu();return;}
+    if(modalOpen){
+      if(modalMode==='variants')closeModal();
+      else closeModalWithoutSavingDraft();
+      return;
+    }
+  }
+
+  if(hasSavedItems){
+    pushCatalogueBackGuard();
+    showCatalogueExitConfirm();
+    return;
+  }
+
+  // No order to protect: make a single phone Back behave like a normal Back,
+  // rather than merely consuming the extra guard entry.
+  catalogueBackGuardActive=false;
+  window.setTimeout(()=>history.back(),0);
+}
+function installCatalogueBackGuard(){
+  try{
+    pushCatalogueBackGuard();
+    window.addEventListener('popstate',handleCataloguePopState);
+  }catch(_error){}
+}
 // Lock the catalogue page while either the variant/order modal or image zoom is open.
 // The modal's own content pane remains scrollable; page position is restored on close.
 let pageScrollLocked=false, lockedPageY=0, savedPageStyles=null;
@@ -380,6 +483,7 @@ function updateCatalogueToolbarOffset(){
 window.addEventListener('resize', updateCatalogueToolbarOffset, {passive:true});
 updateCatalogueToolbarOffset();
 render();
+installCatalogueBackGuard();
 </script>
 </body>
 </html>
