@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- TM Enterprise cart-leave persistence fix: 2026-10-22 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -552,10 +553,23 @@ updateCatalogueToolbarOffset();
 render();
 installCatalogueBackGuard();
 
-// Intentionally do not use beforeunload here.
-// Browsers control the text and buttons of their native refresh/leave prompt,
-// so it cannot be customized or partially removed. Cart and variant draft
-// quantities are saved to localStorage and restored after the page reloads.
+// No beforeunload handler is registered: that event causes the browser-native
+// "This page is asking you to confirm..." prompt, whose text cannot be customized.
+// Save cart/draft state as a final safeguard when the tab is hidden or navigated away.
+try { window.onbeforeunload = null; } catch (_error) {}
+window.addEventListener('pagehide', function(){ persistCartState(); }, {capture:true});
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'hidden') persistCartState();
+}, {capture:true});
+// If this document is restored from the back-forward cache, re-read the saved order.
+window.addEventListener('pageshow', function(){
+  try {
+    if (modalMode === 'closed') {
+      cart = readPersistentCart();
+      render();
+    }
+  } catch (_error) {}
+});
 // The custom in-page confirmation remains active for catalogue Back navigation.
 </script>
 </body>
