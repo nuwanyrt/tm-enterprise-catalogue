@@ -123,6 +123,26 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
     </div>
   </div>
 </div>
+<div id="closeCartConfirmBg" class="cart-confirm-bg" style="display:none" role="presentation">
+  <div class="cart-confirm-card" role="dialog" aria-modal="true" aria-labelledby="closeCartConfirmQuestion" aria-describedby="closeCartConfirmDetails">
+    <div id="closeCartConfirmQuestion" class="cart-confirm-question">Close My Order?</div>
+    <div id="closeCartConfirmDetails" class="cart-confirm-details">Your selected items will stay saved in your cart. You can open My Order again anytime.</div>
+    <div class="cart-confirm-actions">
+      <button type="button" class="cart-confirm-cancel" onclick="resolveCloseCart(false)">Keep Order</button>
+      <button type="button" class="cart-confirm-ok" onclick="resolveCloseCart(true)">Close Order</button>
+    </div>
+  </div>
+</div>
+<div id="removeItemConfirmBg" class="cart-confirm-bg" style="display:none" role="presentation">
+  <div class="cart-confirm-card" role="dialog" aria-modal="true" aria-labelledby="removeItemConfirmQuestion" aria-describedby="removeItemConfirmDetails">
+    <div id="removeItemConfirmQuestion" class="cart-confirm-question">Remove this item?</div>
+    <div id="removeItemConfirmDetails" class="cart-confirm-details">This item will be removed from your current order.</div>
+    <div class="cart-confirm-actions">
+      <button type="button" class="cart-confirm-cancel" onclick="resolveRemoveCartItem(false)">Keep Item</button>
+      <button type="button" class="cart-confirm-ok" onclick="resolveRemoveCartItem(true)">Remove Item</button>
+    </div>
+  </div>
+</div>
 <div id="exitConfirmBg" class="cart-confirm-bg exit-confirm-bg" style="display:none" role="presentation">
   <div class="cart-confirm-card exit-confirm-card" role="dialog" aria-modal="true" aria-labelledby="exitConfirmQuestion" aria-describedby="exitConfirmDetails">
     <div id="exitConfirmQuestion" class="cart-confirm-question">Are you sure you want to exit the catalogue?</div>
@@ -319,6 +339,7 @@ function resolveCartConfirm(save){
     closeModalWithoutSavingDraft();
   }
 }
+let pendingRemoveCartItem=null;
 function openCart(){
   // Use an in-page confirmation to avoid browser-native file:// title chrome.
   // Cancel continues with previously saved cart items; it never removes them.
@@ -353,6 +374,24 @@ function resolveEmptyCart(clear){
   openCartView();
 }
 function removeCartItem(sku,idx){
+  const p=products.find(x=>x.sku===sku);
+  const v=p?.variants?.[Number(idx)];
+  const key=qtyKey(sku,idx);
+  const q=Number(cart[key]||0);
+  if(!v || q<=0)return;
+  pendingRemoveCartItem={sku,idx:Number(idx)};
+  document.getElementById('removeItemConfirmQuestion').textContent=`Remove “${v.name}” from your order?`;
+  document.getElementById('removeItemConfirmDetails').textContent=`This will remove ${q} ${q===1?'item':'items'} from your current order. You can add it again later.`;
+  document.getElementById('removeItemConfirmBg').style.display='flex';
+}
+function resolveRemoveCartItem(confirmed){
+  document.getElementById('removeItemConfirmBg').style.display='none';
+  const pending=pendingRemoveCartItem;
+  pendingRemoveCartItem=null;
+  if(!confirmed || !pending)return;
+  removeCartItemNow(pending.sku,pending.idx);
+}
+function removeCartItemNow(sku,idx){
   const customerField=document.getElementById('cust'),addressField=document.getElementById('addr'),content=document.getElementById('modalcontent');
   const previousCustomer=customerField?customerField.value:'';
   const previousAddress=addressField?addressField.value:'';
@@ -620,11 +659,25 @@ zi.addEventListener('touchend',e=>{if(e.touches.length<2)pinchStartDist=0;if(e.t
 zi.addEventListener('touchcancel',()=>{pinchStartDist=0;dragging=false},{passive:false});
 window.addEventListener('resize',()=>{if(document.getElementById('zoombg').style.display==='block') fitToScreen();});
 function closeModal(){
+  if(modalMode==='cart'){
+    const rows=cartRows().rows;
+    const q=rows.reduce((sum,r)=>sum+Number(r.q||0),0);
+    document.getElementById('closeCartConfirmQuestion').textContent='Close My Order?';
+    document.getElementById('closeCartConfirmDetails').textContent=q>0
+      ? `Your order contains ${q} ${q===1?'item':'items'}. They will stay saved in your cart if you close this window.`
+      : 'Your cart is empty. Close the order window and return to the catalogue?';
+    document.getElementById('closeCartConfirmBg').style.display='flex';
+    return;
+  }
   if(modalMode==='variants' && hasVariantDraftChanges()){
     showCartConfirm('close');
     return;
   }
   closeModalWithoutSavingDraft();
+}
+function resolveCloseCart(shouldClose){
+  document.getElementById('closeCartConfirmBg').style.display='none';
+  if(shouldClose)closeModalWithoutSavingDraft();
 }
 function closeModalWithoutSavingDraft(){
   document.getElementById('modalbg').style.display='none';
