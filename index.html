@@ -621,97 +621,26 @@ function tmStampForOrderImage(){
   const now=new Date();
   return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0'),'-',String(now.getHours()).padStart(2,'0'),String(now.getMinutes()).padStart(2,'0')].join('');
 }
-async function sendOrderAsImage(){
-  const {rows,total}=cartRows();
-  if(!rows.length){alert('Your order is empty.');return;}
-  const customerInput=(document.getElementById('cust')?.value||'').trim();
-  const addressInput=(document.getElementById('addr')?.value||'').trim();
-  const customerName=CATALOG_CUSTOMER||customerInput||'Not given';
-  const button=document.getElementById('sendOrderImageBtn');
-  if(button){button.disabled=true;button.textContent='PREPARING A4 IMAGE…';}
-  let shade=null,stage=null;
-  try{
-    shade=tmOrderImageBusyLayer();
-    await loadTmOrderImageLibs();
-    if(typeof window.html2canvas!=='function')throw new Error('Image rendering library is unavailable.');
-    const pageSize=12;
-    const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
-    const orderDate=new Date().toLocaleString();
-    const totalItems=rows.reduce((a,r)=>a+Number(r.q||0),0);
-    stage=document.createElement('div');
-    stage.id='tmOrderImageCaptureStage';
-    stage.style.cssText='position:fixed;left:0;top:0;z-index:2147483646;width:190mm;margin:0;padding:0;background:#fff;color:#111;pointer-events:none;overflow:visible;';
-    stage.setAttribute('aria-hidden','true');
-    document.body.appendChild(stage);
-    cartImageTotalItems=totalItems;
-    const stamp=tmStampForOrderImage();
-    const imageFiles=[];
-    for(let pageIndex=0;pageIndex<pageCount;pageIndex++){
-      const chunk=rows.slice(pageIndex*pageSize,(pageIndex+1)*pageSize);
-      stage.innerHTML=tmOrderImagePageHtml(chunk,total,customerName,addressInput,orderDate,pageIndex,pageCount,pageIndex===pageCount-1);
-      const pageNode=stage.firstElementChild;
-      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-      const renderedCanvas=await window.html2canvas(pageNode,{
-        scale:1.5,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
-        scrollX:0,scrollY:0,
-        windowWidth:Math.max(window.innerWidth,Math.ceil(pageNode.getBoundingClientRect().width+24)),
-        windowHeight:Math.max(window.innerHeight,Math.ceil(pageNode.scrollHeight+24))
-      });
-      if(!renderedCanvas||renderedCanvas.width<300||renderedCanvas.height<300)throw new Error('Order image was empty. Please retry in Chrome.');
-      // Exact A4 portrait raster size at ~150 dpi. Fit the full order page inside white A4 margins.
-      const A4_W=1240,A4_H=1754,padding=48;
-      const a4=document.createElement('canvas');a4.width=A4_W;a4.height=A4_H;
-      const ctx=a4.getContext('2d');if(!ctx)throw new Error('Could not prepare the A4 image canvas.');
-      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,A4_W,A4_H);
-      ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-      const ratio=Math.min((A4_W-padding*2)/renderedCanvas.width,(A4_H-padding*2)/renderedCanvas.height);
-      const drawW=renderedCanvas.width*ratio,drawH=renderedCanvas.height*ratio;
-      ctx.drawImage(renderedCanvas,(A4_W-drawW)/2,(A4_H-drawH)/2,drawW,drawH);
-      const blob=await tmCanvasToBlob(a4,'image/jpeg',0.88);
-      if(!(blob instanceof Blob)||blob.size<1000)throw new Error('The generated A4 image appears to be empty.');
-      const suffix=pageCount>1?`-Page-${String(pageIndex+1).padStart(2,'0')}`:'';
-      const filename=`TM-Order-${stamp}${suffix}.jpg`;
-      const file=(typeof File==='function')?new File([blob],filename,{type:'image/jpeg'}):null;
-      if(!file)throw new Error('This browser cannot package the order image. Please try Chrome.');
-      imageFiles.push(file);
-      a4.width=1;a4.height=1;renderedCanvas.width=1;renderedCanvas.height=1;
-    }
-    let canShareFiles=false;
-    if(imageFiles.length&&navigator.share&&navigator.canShare){try{canShareFiles=navigator.canShare({files:imageFiles});}catch(_error){canShareFiles=false;}}
-    if(canShareFiles){
-      try{
-        await navigator.share({files:imageFiles,title:'TM DISTRIBUTORS Order',text:'Order image — A4 size'});
-        markOrderHandoffPendingClear();
-        closeOrderViewAfterHandoff();
-        return;
-      }catch(shareError){
-        if(shareError&&shareError.name==='AbortError')return;
-        console.warn('Image sharing unavailable; downloading the A4 image(s).',shareError);
-      }
-    }
-    // Fallback for browsers without image sharing: download every page image for manual WhatsApp attachment.
-    for(const file of imageFiles)downloadOrderImageBlob(file,file.name);
-    markOrderHandoffPendingClear();
-    alert(`${imageFiles.length===1?'A4 order image has':'A4 order images have'} been created and downloaded. Attach ${imageFiles.length===1?'the image':'the images'} in WhatsApp to send. Your cart has been kept. You will be asked before starting the next order.`);
-    closeOrderViewAfterHandoff();
-  }catch(error){
-    console.error('A4 order image generation failed:',error);
-    alert('Could not create the A4 order image. Check the internet connection and try again in Chrome. Your cart has been kept.');
-  }finally{
-    if(stage)stage.remove();
-    if(shade)shade.remove();
-    if(button){button.disabled=false;button.textContent='SEND ORDER AS IMAGE';}
-    cartImageTotalItems=0;
-  }
+// Shared A4 rendering for IMAGE and PDF.
+// If the cart and customer details are unchanged, reuse the same rendered A4 pages for 10 minutes.
+let tmOrderA4PageCache = null;
+let tmOrderPdfLibsPromise = null;
+
+function tmOrderA4SnapshotKey(rows,total,customerName,addressInput){
+  return JSON.stringify({
+    rows: rows.map(r=>[
+      String(r.sku||''), Number(r.idx)||0, String(r.v.code||''),
+      String(r.v.name||r.p.name||''), Number(r.q)||0,
+      Number(r.v.price)||0, Number(r.line)||0
+    ]),
+    total: Number(total)||0,
+    customerName: String(customerName||''),
+    address: String(addressInput||''),
+    customerCode: String(CATALOG_CUSTOMER_CODE||''),
+    discount: Number(CATALOG_DISCOUNT)||0
+  });
 }
-// Load the image renderer early when possible; retry automatically when the image button is tapped.
-preloadTmOrderImageLibs();
 
-
-// Image-based A4 order PDF. Render each invoice page to a canvas first, then place that image on an A4 PDF page.
-// This avoids the blank-page issue caused by capturing a far-offscreen HTML element.
-let tmOrderPdfLibsPromise=null;
-let cartPdfTotalItems=0;
 function loadTmOrderPdfLibs(){
   if(typeof window.html2canvas==='function'&&window.jspdf&&typeof window.jspdf.jsPDF==='function')return Promise.resolve();
   if(tmOrderPdfLibsPromise)return tmOrderPdfLibsPromise;
@@ -722,48 +651,125 @@ function loadTmOrderPdfLibs(){
   return tmOrderPdfLibsPromise;
 }
 function preloadTmOrderPdfLibs(){loadTmOrderPdfLibs().catch(()=>{});}
-function tmOrderPdfPageHtml(rows,total,customerName,address,orderDate,pageIndex,pageCount,showTotal){
-  const itemRows=rows.map((r,i)=>`<tr style="break-inside:avoid;page-break-inside:avoid">
-    <td style="border:1px solid #cbd5e1;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere">${escapeHtml(r.v.code||'')}</td>
-    <td style="border:1px solid #cbd5e1;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere"><strong>${escapeHtml(r.v.name||r.p.name||'')}</strong>${r.p.name&&r.p.name!==(r.v.name||'')?`<br><span style="font-size:8pt;color:#64748b">${escapeHtml(r.p.name)}</span>`:''}</td>
-    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top">${Number(r.q)||0}</td>
-    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top;white-space:nowrap">${escapeHtml(money(r.v.price))}</td>
-    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top;white-space:nowrap">${escapeHtml(money(r.line))}</td>
-  </tr>`).join('');
-  const customerCode=String(CATALOG_CUSTOMER_CODE||'').trim();
-  const discount=Number(CATALOG_DISCOUNT||0);
-  const itemCount=rows.reduce((a,r)=>a+Number(r.q||0),0);
-  return `<section class="tm-pdf-page" style="width:190mm;min-height:277mm;box-sizing:border-box;background:#fff;color:#111;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:9pt;line-height:1.32;display:flex;flex-direction:column;overflow-wrap:anywhere">
-    <header style="border-bottom:3px solid #b91c1c;padding:0 0 8px;margin:0 0 10px">
-      <div style="font-size:20pt;font-weight:900;line-height:1.15;color:#b91c1c">TM DISTRIBUTORS</div>
-      <div style="font-size:13pt;font-weight:800;margin-top:3px">ORDER SUMMARY</div>
-      <div style="font-size:8.5pt;color:#555;margin-top:4px">Date: ${escapeHtml(orderDate)} &nbsp; | &nbsp; Page ${pageIndex+1} of ${pageCount}</div>
-    </header>
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:10px;font-size:8.5pt">
-      <tr><td style="width:50%;vertical-align:top;padding:2px 8px 5px 0;overflow-wrap:anywhere"><strong>Customer / Shop</strong><br>${escapeHtml(customerName||'Not given')}</td><td style="width:50%;vertical-align:top;padding:2px 0 5px 8px;overflow-wrap:anywhere">${customerCode?`<strong>Customer Code</strong><br>${escapeHtml(customerCode)}`:''}${discount?`<br><strong>Customer Discount:</strong> ${discount}%`:''}</td></tr>
-      <tr><td colspan="2" style="vertical-align:top;padding-top:5px;overflow-wrap:anywhere"><strong>Delivery Address / Message</strong><br>${escapeHtml(address||'Not given').replace(/\n/g,'<br>')}</td></tr>
-    </table>
-    <div style="font-size:10pt;font-weight:800;margin:0 0 5px">Order Items${pageCount>1?` — ${pageIndex===0?'continued on following pages':(showTotal?'final page':'continued')}`:''}</div>
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt">
-      <thead><tr style="background:#f1f3f5">
-        <th style="text-align:left;border:1px solid #94a3b8;padding:6px 5px;width:17%">SKU</th>
-        <th style="text-align:left;border:1px solid #94a3b8;padding:6px 5px;width:39%">Item</th>
-        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:9%">Qty</th>
-        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:17%">Unit Price</th>
-        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:18%">Amount</th>
-      </tr></thead><tbody>${itemRows}</tbody>
-    </table>
-    ${showTotal?`<div style="margin:12px 0 0 auto;width:75%;border-top:2px solid #111;padding-top:8px;text-align:right;font-size:9pt"><div>Total Quantity: <strong>${cartPdfTotalItems}</strong></div><div style="font-size:14pt;font-weight:900;margin-top:5px">Order Total: ${escapeHtml(money(total))}</div></div>`:`<div style="margin-top:8px;text-align:right;font-size:8pt;color:#64748b">Items continue on the next page.</div>`}
-    <footer style="margin-top:auto;padding-top:10px;border-top:1px solid #ddd;font-size:8pt;color:#555">Thank you for your order · TM DISTRIBUTORS</footer>
-  </section>`;
+
+async function getTmOrderA4Pages(rows,total,customerName,addressInput){
+  const key=tmOrderA4SnapshotKey(rows,total,customerName,addressInput);
+  const nowMs=Date.now();
+  if(tmOrderA4PageCache&&tmOrderA4PageCache.key===key&&(nowMs-tmOrderA4PageCache.createdAt)<600000){
+    return tmOrderA4PageCache;
+  }
+  await loadTmOrderImageLibs();
+  if(typeof window.html2canvas!=='function')throw new Error('Image rendering library is unavailable.');
+
+  const pageSize=12;
+  const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
+  const orderDate=new Date().toLocaleString();
+  const stamp=tmStampForOrderImage();
+  const totalItems=rows.reduce((a,r)=>a+Number(r.q||0),0);
+  const pageBlobs=[];
+  let stage=null;
+  cartImageTotalItems=totalItems;
+  try{
+    stage=document.createElement('div');
+    stage.id='tmOrderA4SharedCaptureStage';
+    stage.style.cssText='position:fixed;left:0;top:0;z-index:2147483646;width:190mm;margin:0;padding:0;background:#fff;color:#111;pointer-events:none;overflow:visible;';
+    stage.setAttribute('aria-hidden','true');
+    document.body.appendChild(stage);
+    for(let pageIndex=0;pageIndex<pageCount;pageIndex++){
+      const chunk=rows.slice(pageIndex*pageSize,(pageIndex+1)*pageSize);
+      stage.innerHTML=tmOrderImagePageHtml(chunk,total,customerName,addressInput,orderDate,pageIndex,pageCount,pageIndex===pageCount-1);
+      const pageNode=stage.firstElementChild;
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      // 1.25x rasterization reduces html2canvas work by about 30% vs. 1.5x.
+      // Final exported output remains A4 portrait at 1240 × 1754 pixels.
+      const renderedCanvas=await window.html2canvas(pageNode,{
+        scale:1.25,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
+        scrollX:0,scrollY:0,
+        windowWidth:Math.max(window.innerWidth,Math.ceil(pageNode.getBoundingClientRect().width+24)),
+        windowHeight:Math.max(window.innerHeight,Math.ceil(pageNode.scrollHeight+24))
+      });
+      if(!renderedCanvas||renderedCanvas.width<250||renderedCanvas.height<250)throw new Error('Order image was empty. Please retry in Chrome.');
+      const A4_W=1240,A4_H=1754,padding=48;
+      const a4=document.createElement('canvas');a4.width=A4_W;a4.height=A4_H;
+      const ctx=a4.getContext('2d');
+      if(!ctx)throw new Error('Could not prepare the A4 image canvas.');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,A4_W,A4_H);
+      ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+      const ratio=Math.min((A4_W-padding*2)/renderedCanvas.width,(A4_H-padding*2)/renderedCanvas.height);
+      const drawW=renderedCanvas.width*ratio,drawH=renderedCanvas.height*ratio;
+      ctx.drawImage(renderedCanvas,(A4_W-drawW)/2,(A4_H-drawH)/2,drawW,drawH);
+      // Moderate JPEG quality keeps generation and file transfer quicker while text stays readable.
+      const blob=await tmCanvasToBlob(a4,'image/jpeg',0.84);
+      if(!(blob instanceof Blob)||blob.size<1000)throw new Error('The generated A4 page appears to be empty.');
+      pageBlobs.push(blob);
+      // Release large canvases as soon as that page is converted.
+      renderedCanvas.width=1;renderedCanvas.height=1;a4.width=1;a4.height=1;
+    }
+  }finally{
+    if(stage)stage.remove();
+    cartImageTotalItems=0;
+  }
+  const result={key,createdAt:Date.now(),orderDate,stamp,pageBlobs,totalItems};
+  // Avoid retaining too many large images on low-memory phones. Large orders still work; they just won't be cached.
+  const totalBytes=pageBlobs.reduce((n,b)=>n+b.size,0);
+  tmOrderA4PageCache=(pageCount<=12&&totalBytes<=8*1024*1024)?result:null;
+  return result;
 }
+
+function setOrderOutputBusy(which,busy){
+  const imageBtn=document.getElementById('sendOrderImageBtn');
+  const pdfBtn=document.getElementById('sendOrderPdfBtn');
+  if(imageBtn){imageBtn.disabled=busy;imageBtn.textContent=busy&&which==='image'?'PREPARING A4 IMAGE…':'SEND ORDER AS IMAGE';}
+  if(pdfBtn){pdfBtn.disabled=busy;pdfBtn.textContent=busy&&which==='pdf'?'PREPARING A4 PDF…':'SEND ORDER AS PDF';}
+}
+function orderPageFiles(pageData){
+  return pageData.pageBlobs.map((blob,index)=>{
+    const suffix=pageData.pageBlobs.length>1?`-Page-${String(index+1).padStart(2,'0')}`:'';
+    const filename=`TM-Order-${pageData.stamp}${suffix}.jpg`;
+    return (typeof File==='function')?new File([blob],filename,{type:'image/jpeg'}):null;
+  });
+}
+
+async function sendOrderAsImage(){
+  const {rows,total}=cartRows();
+  if(!rows.length){alert('Your order is empty.');return;}
+  const customerInput=(document.getElementById('cust')?.value||'').trim();
+  const addressInput=(document.getElementById('addr')?.value||'').trim();
+  const customerName=CATALOG_CUSTOMER||customerInput||'Not given';
+  let shade=null;
+  setOrderOutputBusy('image',true);
+  try{
+    shade=tmOrderImageBusyLayer();
+    const pageData=await getTmOrderA4Pages(rows,total,customerName,addressInput);
+    const files=orderPageFiles(pageData);
+    if(files.some(file=>!file))throw new Error('This browser cannot package order images. Please try Chrome.');
+    let canShareFiles=false;
+    if(files.length&&navigator.share&&navigator.canShare){try{canShareFiles=navigator.canShare({files});}catch(_error){canShareFiles=false;}}
+    if(canShareFiles){
+      try{
+        await navigator.share({files,title:'TM DISTRIBUTORS Order',text:'Order image — A4 size'});
+        markOrderHandoffPendingClear();closeOrderViewAfterHandoff();return;
+      }catch(shareError){if(shareError&&shareError.name==='AbortError')return;console.warn('Image sharing unavailable; downloading A4 images.',shareError);}
+    }
+    files.forEach(file=>downloadOrderImageBlob(file,file.name));
+    markOrderHandoffPendingClear();closeOrderViewAfterHandoff();
+    alert(`${files.length===1?'A4 order image has':'A4 order images have'} been created and downloaded. Attach ${files.length===1?'the image':'the images'} in WhatsApp to send. Your cart has been kept.`);
+  }catch(error){
+    console.error('A4 order image generation failed:',error);
+    alert('Could not create the A4 order image. Check the internet connection and try again in Chrome. Your cart has been kept.');
+  }finally{
+    if(shade)shade.remove();
+    setOrderOutputBusy('image',false);
+  }
+}
+
 function downloadOrderPdfBlob(blob,filename){
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 function tmPdfBusyLayer(){
   const shade=document.createElement('div');
   shade.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(17,24,39,.62);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Arial,sans-serif;';
-  shade.innerHTML='<div style="background:#fff;color:#111;border-radius:14px;max-width:320px;padding:20px 22px;text-align:center;box-shadow:0 10px 40px #0005"><div style="font-size:17px;font-weight:800">Preparing A4 Order PDF</div><div style="font-size:13px;color:#555;margin-top:8px">Creating an image-based PDF. Please keep this page open…</div></div>';
+  shade.innerHTML='<div style="background:#fff;color:#111;border-radius:14px;max-width:320px;padding:20px 22px;text-align:center;box-shadow:0 10px 40px #0005"><div style="font-size:17px;font-weight:800">Preparing A4 Order PDF</div><div style="font-size:13px;color:#555;margin-top:8px">Using optimized A4 order pages. Please keep this page open…</div></div>';
   document.body.appendChild(shade);return shade;
 }
 async function sendOrderAsPDF(){
@@ -772,85 +778,48 @@ async function sendOrderAsPDF(){
   const customerInput=(document.getElementById('cust')?.value||'').trim();
   const addressInput=(document.getElementById('addr')?.value||'').trim();
   const customerName=CATALOG_CUSTOMER||customerInput||'Not given';
-  const button=document.getElementById('sendOrderPdfBtn');
-  if(button){button.disabled=true;button.textContent='PREPARING A4 PDF…';}
-  let shade=null,stage=null;
+  let shade=null;
+  setOrderOutputBusy('pdf',true);
   try{
     shade=tmPdfBusyLayer();
     await loadTmOrderPdfLibs();
     const {jsPDF}=window.jspdf;
-    if(typeof window.html2canvas!=='function'||typeof jsPDF!=='function')throw new Error('PDF image libraries are unavailable.');
-    // Capture a reasonable number of order rows per A4 page to keep the image readable.
-    const pageSize=12;
-    const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
-    const orderDate=new Date().toLocaleString();
-    const totalItems=rows.reduce((a,r)=>a+Number(r.q||0),0);
-    stage=document.createElement('div');
-    stage.id='tmOrderPdfCaptureStage';
-    stage.style.cssText='position:fixed;left:0;top:0;z-index:2147483646;width:190mm;margin:0;padding:0;background:#fff;color:#111;pointer-events:none;overflow:visible;';
-    stage.setAttribute('aria-hidden','true');
-    document.body.appendChild(stage);
-    // Used by the HTML builder to show the total quantity on the final page.
-    cartPdfTotalItems=totalItems;
+    if(typeof jsPDF!=='function')throw new Error('PDF library is unavailable.');
+    const pageData=await getTmOrderA4Pages(rows,total,customerName,addressInput);
     const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-    for(let pageIndex=0;pageIndex<pageCount;pageIndex++){
-      const chunk=rows.slice(pageIndex*pageSize,(pageIndex+1)*pageSize);
-      stage.innerHTML=tmOrderPdfPageHtml(chunk,total,customerName,addressInput,orderDate,pageIndex,pageCount,pageIndex===pageCount-1);
-      const pageNode=stage.firstElementChild;
-      // Ensure the capture target has a real layout box at the viewport origin. Never render from -10000px.
-      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-      const canvas=await window.html2canvas(pageNode,{
-        scale:1.5,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
-        scrollX:0,scrollY:0,
-        windowWidth:Math.max(window.innerWidth,Math.ceil(pageNode.getBoundingClientRect().width+24)),
-        windowHeight:Math.max(window.innerHeight,Math.ceil(pageNode.scrollHeight+24))
-      });
-      if(!canvas||canvas.width<300||canvas.height<300)throw new Error('Order image was empty. Please retry in Chrome.');
-      // Encode asynchronously as a moderately compressed JPEG; avoids a large synchronous base64 string.
-      const jpegBlob=await tmCanvasToBlob(canvas,'image/jpeg',0.86);
-      if(!(jpegBlob instanceof Blob)||jpegBlob.size<1000)throw new Error('Could not convert order page to an image.');
-      const imageData=new Uint8Array(await jpegBlob.arrayBuffer());
-      if(!imageData||imageData.byteLength<1000)throw new Error('Could not convert order page to an image.');
-      if(pageIndex>0)pdf.addPage('a4','portrait');
-      // A4 with 10 mm white margins. The order page is inserted as a raster image, not selectable text.
-      const maxW=190,maxH=277;
-      const ratio=Math.min(maxW/canvas.width,maxH/canvas.height);
-      const drawW=canvas.width*ratio,drawH=canvas.height*ratio;
-      const x=(210-drawW)/2;
-      pdf.addImage(imageData,'JPEG',x,10,drawW,drawH,`tm-order-page-${pageIndex}`,'FAST');
-      // Release the large temporary canvas between pages to reduce memory pressure on phones.
-      canvas.width=1;canvas.height=1;
+    for(let i=0;i<pageData.pageBlobs.length;i++){
+      const imageData=new Uint8Array(await pageData.pageBlobs[i].arrayBuffer());
+      if(imageData.byteLength<1000)throw new Error('An order page image is empty.');
+      if(i>0)pdf.addPage('a4','portrait');
+      // Embed the same final A4 raster used by the Image option; no second HTML render is needed.
+      pdf.addImage(imageData,'JPEG',0,0,210,297,`tm-order-page-${i}`,'FAST');
     }
     const blob=pdf.output('blob');
     if(!(blob instanceof Blob)||blob.size<1000)throw new Error('The A4 PDF appears to be empty.');
-    const now=new Date();
-    const stamp=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0'),'-',String(now.getHours()).padStart(2,'0'),String(now.getMinutes()).padStart(2,'0')].join('');
-    const filename='TM-Order-'+stamp+'.pdf';
+    const filename=`TM-Order-${pageData.stamp}.pdf`;
     const pdfFile=(typeof File==='function')?new File([blob],filename,{type:'application/pdf'}):null;
     if(pdfFile&&navigator.share&&navigator.canShare){
       let canShareFile=false;try{canShareFile=navigator.canShare({files:[pdfFile]});}catch(_error){}
       if(canShareFile){
         try{await navigator.share({files:[pdfFile],title:'TM DISTRIBUTORS Order',text:'Order PDF'});markOrderHandoffPendingClear();closeOrderViewAfterHandoff();return;}
-        catch(shareError){if(shareError&&shareError.name==='AbortError')return;}
+        catch(shareError){if(shareError&&shareError.name==='AbortError')return;console.warn('PDF sharing unavailable; downloading file.',shareError);}
       }
     }
     downloadOrderPdfBlob(blob,filename);
-    markOrderHandoffPendingClear();
-    alert('A4 order PDF created as an image and downloaded. Attach it in WhatsApp to send. Your cart has been kept. You will be asked before starting the next order.');
-    closeOrderViewAfterHandoff();
+    markOrderHandoffPendingClear();closeOrderViewAfterHandoff();
+    alert('A4 order PDF created and downloaded. Attach it in WhatsApp to send. Your cart has been kept. You will be asked before starting the next order.');
   }catch(error){
-    console.error('Image-based A4 PDF generation failed:',error);
+    console.error('A4 PDF generation failed:',error);
     alert('Could not create the A4 order PDF. Check the internet connection and try again in Chrome. Your cart has been kept.');
   }finally{
-    if(stage)stage.remove();
     if(shade)shade.remove();
-    if(button){button.disabled=false;button.textContent='SEND ORDER AS PDF';}
-    cartPdfTotalItems=0;
+    setOrderOutputBusy('pdf',false);
   }
 }
-// Warm the libraries in the background; failures are retried when the user taps the PDF button.
-preloadTmOrderPdfLibs();
 
+// Preload libraries once. The Image and PDF actions share cached A4 page blobs when the order stays unchanged.
+preloadTmOrderImageLibs();
+preloadTmOrderPdfLibs();
 
 function sendWhatsAppOrder(){
  const {rows,total}=cartRows();if(!rows.length){alert('Your order is empty.');return}
