@@ -337,33 +337,43 @@ function sendWhatsAppOrder(){
 }
 function shareLink(){const url=window.location.href;const msg=`TM DISTRIBUTORS ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
 
-// Android/browser Back confirmation once the shopper has an order in progress.
-// A guard entry is added when this catalogue loads. If no cart items exist, one
-// Back action is passed through to the previous page; with saved items, a custom
-// in-page dialog offers Stay or Leave.
+// Android/browser Back confirmation for Secret Link catalogues.
+// Some Android in-app browsers are more consistent with fragment/history traversal
+// than with a same-URL pushState alone. Use a private fragment guard and listen to
+// hashchange; the fragment is never sent to the Cloudflare Worker/server.
 let exitConfirmOpen=false;
 let catalogueBackGuardActive=false;
 let allowNextBackToLeave=false;
-// Suppress the browser-native unload warning only after the shopper explicitly confirms Leave.
 let allowUnloadWithoutWarning=false;
-const catalogueOriginalUrl=window.location.href;
+const CATALOGUE_BACK_GUARD_HASH='#tm-distributor-back-guard';
+const catalogueBaseUrl=window.location.href.split('#')[0];
+let catalogueLastScrollY=window.scrollY||0;
+window.addEventListener('scroll',function(){
+  if(!exitConfirmOpen) catalogueLastScrollY=window.scrollY||0;
+},{passive:true});
 function pushCatalogueBackGuard(){
   try{
-    // Avoid stacking duplicate guard entries when the page is restored from cache.
-    if(history.state&&history.state.tmDistributorCatalogueBackGuard){
+    if(window.location.hash===CATALOGUE_BACK_GUARD_HASH && history.state && history.state.tmDistributorCatalogueBackGuard){
       catalogueBackGuardActive=true;
       return;
     }
-    history.pushState({tmDistributorCatalogueBackGuard:true, stamp:Date.now()},'',catalogueOriginalUrl);
+    // If a page was refreshed while its private guard fragment was visible, normalize
+    // the current entry first, then create exactly one fresh guard entry.
+    if(window.location.hash===CATALOGUE_BACK_GUARD_HASH){
+      history.replaceState(null,'',catalogueBaseUrl);
+    }
+    history.pushState({tmDistributorCatalogueBackGuard:true,stamp:Date.now()},'',catalogueBaseUrl+CATALOGUE_BACK_GUARD_HASH);
     catalogueBackGuardActive=true;
-  }catch(_error){}
+    // Some mobile browsers restore the previous history entry's scroll position when
+    // Back is pressed. Return to the shopper's prior position after re-arming the guard.
+    window.requestAnimationFrame(()=>window.scrollTo(0,catalogueLastScrollY));
+  }catch(_error){
+    catalogueBackGuardActive=false;
+  }
 }
 function savedCartQuantity(){
   return Object.values(cart||{}).reduce((sum,q)=>sum+Math.max(0,Number(q)||0),0);
 }
-// Include newly selected quantities in the Back warning, even before the shopper
-// has confirmed them into the saved cart. Existing saved quantities are counted
-// only once; lowering a draft does not remove an already-saved cart line.
 function effectiveOrderQuantity(){
   let total=savedCartQuantity();
   if(modalMode==='variants'&&active&&pendingVariantQty){
@@ -392,64 +402,49 @@ function stayInCatalogue(){
   const bg=document.getElementById('exitConfirmBg');
   if(bg)bg.style.display='none';
   exitConfirmOpen=false;
-  // Re-arm the Android/browser Back guard after choosing Stay.
   pushCatalogueBackGuard();
 }
 function leaveCatalogue(){
   const bg=document.getElementById('exitConfirmBg');
   if(bg)bg.style.display='none';
   exitConfirmOpen=false;
-  // The shopper explicitly confirmed Leave; don't show another native warning.
   allowUnloadWithoutWarning=true;
-  window.setTimeout(()=>{allowUnloadWithoutWarning=false;},1500);
-  // Our synthetic guard is immediately above the page's original history entry.
-  // Consume the guard first, then leave the catalogue on the next history step.
-  catalogueBackGuardActive=false;
   allowNextBackToLeave=true;
+  // First Back consumes the private fragment entry. The hashchange handler then
+  // advances once more to leave the catalogue; no native beforeunload prompt is used.
   history.back();
 }
-function handleCataloguePopState(){
+function handleCatalogueHashChange(){
   if(allowNextBackToLeave){
     allowNextBackToLeave=false;
     catalogueBackGuardActive=false;
     window.setTimeout(()=>history.back(),0);
     return;
   }
-
-  // The Back action has just consumed the guard entry. Re-arm it before showing
-  // any in-page UI so pressing Stay keeps the user on this catalogue.
   const zoomOpen=document.getElementById('zoombg')?.style.display==='block';
   const cartConfirmOpenNow=document.getElementById('cartConfirmBg')?.style.display==='flex';
   const menu=document.getElementById('categoryMenu');
   const menuOpen=!!menu&&!menu.hidden;
   const modalOpen=document.getElementById('modalbg')?.style.display==='flex';
 
-  if(zoomOpen||cartConfirmOpenNow||exitConfirmOpen||menuOpen){
-    pushCatalogueBackGuard();
-    if(zoomOpen){closeImageZoom();return;}
-    if(cartConfirmOpenNow||exitConfirmOpen)return;
-    if(menuOpen){closeCategoryMenu();return;}
-  }
-
-  // Keep familiar in-page navigation: when an empty product/order modal is open,
-  // the first Back closes that modal. A Back from the catalogue then asks to exit.
+  // A traversal has consumed the guard. Re-arm it immediately so Stay or closing
+  // an in-page panel does not let the next Android Back bypass the catalogue.
+  pushCatalogueBackGuard();
+  if(zoomOpen){closeImageZoom();return;}
+  if(cartConfirmOpenNow||exitConfirmOpen)return;
+  if(menuOpen){closeCategoryMenu();return;}
   if(modalOpen&&effectiveOrderQuantity()<=0){
-    pushCatalogueBackGuard();
     if(modalMode==='variants')closeModal();
     else closeModalWithoutSavingDraft();
     return;
   }
-
-  // Always confirm a Back from the catalogue page, even when the cart is empty.
-  // This replaces the browser's uncustomizable native leave message.
-  pushCatalogueBackGuard();
   showCatalogueExitConfirm();
 }
 function installCatalogueBackGuard(){
   try{
-    if(!window.__tmDistributorBackGuardInstalled){
-      window.addEventListener('popstate',handleCataloguePopState,true);
-      window.__tmDistributorBackGuardInstalled=true;
+    if(!window.__tmDistributorHashBackGuardInstalled){
+      window.addEventListener('hashchange',handleCatalogueHashChange,true);
+      window.__tmDistributorHashBackGuardInstalled=true;
     }
     pushCatalogueBackGuard();
   }catch(_error){}
@@ -590,7 +585,7 @@ window.addEventListener('pageshow', function(){
     }
     // Android Back may restore this page from the back-forward cache. Re-arm
     // the same-page history guard so the next system Back asks for confirmation.
-    if (!catalogueBackGuardActive && !allowNextBackToLeave) pushCatalogueBackGuard();
+    if ((!catalogueBackGuardActive || window.location.hash!==CATALOGUE_BACK_GUARD_HASH) && !allowNextBackToLeave) pushCatalogueBackGuard();
   } catch (_error) {}
 });
 // The custom in-page confirmation remains active for catalogue Back navigation.
