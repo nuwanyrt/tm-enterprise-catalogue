@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- TM-DISTRIBUTOR-CART-CONTROLS: 2026-10-22-v2 + ORDER-PDF -->
+<!-- TM-DISTRIBUTOR-CART-CONTROLS: 2026-10-22-v2 + ORDER-IMAGE-A4 + ORDER-PDF-A4 -->
 
 <!-- TM Enterprise cart-leave persistence fix: 2026-10-22 -->
 <!-- TM Enterprise WhatsApp handoff clears cart: 2026-10-22 -->
@@ -77,12 +77,13 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 .cart-item-actions .qtyrow .cart-qty-input{width:60px;min-width:60px;height:34px;padding:0 4px;text-align:center;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#111;font-size:16px;font-weight:800;outline:none;appearance:textfield;-moz-appearance:textfield}
 .cart-item-actions .qtyrow .cart-qty-input:focus{border-color:var(--red);box-shadow:0 0 0 2px #b91c1c22}
 .cart-item-actions .qtyrow .cart-qty-input::-webkit-outer-spin-button,.cart-item-actions .qtyrow .cart-qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.order-action-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.order-action-buttons .whats,.order-action-buttons .pdf-order-btn{width:100%;margin-top:0;min-height:48px;border:0;border-radius:11px;padding:12px;font-size:14px;font-weight:900;cursor:pointer}
+.order-action-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.order-action-buttons .whats,.order-action-buttons .image-order-btn,.order-action-buttons .pdf-order-btn{width:100%;min-width:0;margin-top:0;min-height:48px;border:0;border-radius:11px;padding:12px;font-size:13px;font-weight:900;cursor:pointer;overflow-wrap:anywhere}
 .order-action-buttons .whats{background:#1f9d55;color:#fff}
-.pdf-order-btn{background:#1f2937;color:#fff}
-.pdf-order-btn:disabled{opacity:.65;cursor:wait}
-@media(max-width:520px){.order-action-buttons{grid-template-columns:1fr}.order-action-buttons .whats,.order-action-buttons .pdf-order-btn{min-height:46px}}
+.image-order-btn{background:#1f2937;color:#fff}
+.pdf-order-btn{background:#334155;color:#fff}
+.image-order-btn:disabled,.pdf-order-btn:disabled{opacity:.65;cursor:wait}
+@media(max-width:700px){.order-action-buttons{grid-template-columns:1fr}.order-action-buttons .whats,.order-action-buttons .image-order-btn,.order-action-buttons .pdf-order-btn{min-height:46px}}
 .remove-cart-item{border:1px solid #efb5b5;background:#fff;color:#b91c1c;border-radius:9px;padding:8px 10px;font-size:12px;font-weight:800;cursor:pointer}
 .remove-cart-item:active,.empty-cart-btn:active{transform:translateY(1px)}
 @media(max-width:420px){.cart-item-actions{align-items:flex-start}.cart-item-actions .qtyrow{width:100%}.remove-cart-item{margin-left:auto}}
@@ -369,7 +370,7 @@ function openCartView(){
  persistCartState();
  const {rows,total}=cartRows();
  const rowHtml=rows.map(r=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(r.v.name)}</div><div class="varsub">${escapeHtml(r.p.name)} · SKU ${escapeHtml(r.v.code)}</div></div><div class="varprice">${money(r.line)}<div class="varstock order-qty-meta">${r.q} × ${money(r.v.price)}</div></div></div><div class="cart-item-actions"><div class="qtyrow"><span class="qtylabel">Quantity</span><button type="button" aria-label="Decrease quantity" onclick="setCartQty('${escapeAttr(r.sku)}',${Number(r.idx)},${Number(r.q)-1})" ${Number(r.q)<=1?'disabled':''}>−</button><input class="cart-qty-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${Math.max(0,Math.floor(Number(r.v.stock)||0))}" step="1" aria-label="Quantity for ${escapeAttr(r.v.code)}" value="${Number(r.q)}" onchange="setCartQty('${escapeAttr(r.sku)}',${Number(r.idx)},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"><button type="button" aria-label="Increase quantity" onclick="setCartQty('${escapeAttr(r.sku)}',${Number(r.idx)},${Number(r.q)+1})" ${Number(r.q)>=Number(r.v.stock||0)?'disabled':''}>+</button></div><button type="button" class="remove-cart-item" onclick="removeCartItem('${escapeAttr(r.sku)}',${Number(r.idx)})" aria-label="Remove ${escapeAttr(r.v.code)} from cart">Remove item</button></div></div>`).join('');
- document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>MY ORDER</h2><div class="modalmeta">Edit quantities, remove items individually, or clear the whole cart.</div></div>${rows.length?`<div class="cart-order-tools"><button type="button" class="empty-cart-btn" onclick="confirmEmptyCart()">EMPTY CART</button></div>${rowHtml}<div class="orderbox"><div class="orderrow"><span>Total items</span><b>${rows.reduce((a,r)=>a+r.q,0)}</b></div><div class="orderrow grand"><span>Order Total</span><b>${money(total)}</b></div><input id="cust" class="field" placeholder="Customer / Shop name"><textarea id="addr" class="field" rows="3" placeholder="Delivery address / message"></textarea><div class="order-action-buttons"><button class="whats" type="button" onclick="sendWhatsAppOrder()">SEND ORDER VIA WHATSAPP</button><button class="pdf-order-btn" id="sendOrderPdfBtn" type="button" onclick="sendOrderAsPDF()">SEND ORDER AS PDF</button></div></div>`:`<div class="empty">Your order is empty.</div>`}`;
+ document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>MY ORDER</h2><div class="modalmeta">Edit quantities, remove items individually, or clear the whole cart.</div></div>${rows.length?`<div class="cart-order-tools"><button type="button" class="empty-cart-btn" onclick="confirmEmptyCart()">EMPTY CART</button></div>${rowHtml}<div class="orderbox"><div class="orderrow"><span>Total items</span><b>${rows.reduce((a,r)=>a+r.q,0)}</b></div><div class="orderrow grand"><span>Order Total</span><b>${money(total)}</b></div><input id="cust" class="field" placeholder="Customer / Shop name"><textarea id="addr" class="field" rows="3" placeholder="Delivery address / message"></textarea><div class="order-action-buttons"><button class="whats" type="button" onclick="sendWhatsAppOrder()">SEND ORDER VIA WHATSAPP</button><button class="image-order-btn" id="sendOrderImageBtn" type="button" onclick="sendOrderAsImage()">SEND ORDER AS IMAGE</button><button class="pdf-order-btn" id="sendOrderPdfBtn" type="button" onclick="sendOrderAsPDF()">SEND ORDER AS PDF</button></div></div>`:`<div class="empty">Your order is empty.</div>`}`;
  document.getElementById('modalbg').style.display='flex';
  document.getElementById('modalfooter').style.display='none';
  document.getElementById('modalcontent').scrollTop=0;
@@ -458,25 +459,172 @@ function setCartQty(sku,idx,q){
  if(newAddressField)newAddressField.value=previousAddress;
  if(newContent)newContent.scrollTop=previousScroll;
 }
+// A4 order image export. Each order page is rendered to a canvas, then fitted on an A4-ratio JPEG canvas.
+// Image dimensions are 1240 x 1754 px (A4 portrait at approximately 150 dpi).
+let tmOrderImageLibsPromise=null;
+let cartImageTotalItems=0;
+function tmLoadScript(src,ready){
+  if(ready())return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    const existing=Array.from(document.scripts).find(s=>s.src===src);
+    const script=existing||document.createElement('script');
+    if(!existing){script.src=src;script.async=true;script.crossOrigin='anonymous';}
+    script.onload=()=>ready()?resolve():reject(new Error('Image library did not initialize: '+src));
+    script.onerror=()=>reject(new Error('Could not load image library: '+src));
+    if(!existing)document.head.appendChild(script);
+    else if(ready())resolve();
+  });
+}
+function loadTmOrderImageLibs(){
+  if(typeof window.html2canvas==='function')return Promise.resolve();
+  if(tmOrderImageLibsPromise)return tmOrderImageLibsPromise;
+  tmOrderImageLibsPromise=tmLoadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function')
+    .catch(err=>{tmOrderImageLibsPromise=null;throw err;});
+  return tmOrderImageLibsPromise;
+}
+function preloadTmOrderImageLibs(){loadTmOrderImageLibs().catch(()=>{});}
+function tmOrderImagePageHtml(rows,total,customerName,address,orderDate,pageIndex,pageCount,showTotal){
+  const itemRows=rows.map(r=>`<tr style="break-inside:avoid;page-break-inside:avoid">
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere">${escapeHtml(r.v.code||'')}</td>
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere"><strong>${escapeHtml(r.v.name||r.p.name||'')}</strong>${r.p.name&&r.p.name!==(r.v.name||'')?`<br><span style="font-size:8pt;color:#64748b">${escapeHtml(r.p.name)}</span>`:''}</td>
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top">${Number(r.q)||0}</td>
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top;white-space:nowrap">${escapeHtml(money(r.v.price))}</td>
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top;white-space:nowrap">${escapeHtml(money(r.line))}</td>
+  </tr>`).join('');
+  const customerCode=String(CATALOG_CUSTOMER_CODE||'').trim();
+  const discount=Number(CATALOG_DISCOUNT||0);
+  return `<section class="tm-order-image-page" style="width:190mm;min-height:277mm;box-sizing:border-box;background:#fff;color:#111;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:9pt;line-height:1.32;display:flex;flex-direction:column;overflow-wrap:anywhere">
+    <header style="border-bottom:3px solid #b91c1c;padding:0 0 8px;margin:0 0 10px">
+      <div style="font-size:20pt;font-weight:900;line-height:1.15;color:#b91c1c">TM DISTRIBUTORS</div>
+      <div style="font-size:13pt;font-weight:800;margin-top:3px">ORDER SUMMARY</div>
+      <div style="font-size:8.5pt;color:#555;margin-top:4px">Date: ${escapeHtml(orderDate)} &nbsp; | &nbsp; Page ${pageIndex+1} of ${pageCount}</div>
+    </header>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:10px;font-size:8.5pt">
+      <tr><td style="width:50%;vertical-align:top;padding:2px 8px 5px 0;overflow-wrap:anywhere"><strong>Customer / Shop</strong><br>${escapeHtml(customerName||'Not given')}</td><td style="width:50%;vertical-align:top;padding:2px 0 5px 8px;overflow-wrap:anywhere">${customerCode?`<strong>Customer Code</strong><br>${escapeHtml(customerCode)}`:''}${discount?`<br><strong>Customer Discount:</strong> ${discount}%`:''}</td></tr>
+      <tr><td colspan="2" style="vertical-align:top;padding-top:5px;overflow-wrap:anywhere"><strong>Delivery Address / Message</strong><br>${escapeHtml(address||'Not given').replace(/\n/g,'<br>')}</td></tr>
+    </table>
+    <div style="font-size:10pt;font-weight:800;margin:0 0 5px">Order Items${pageCount>1?` — ${pageIndex===0?'continued on following pages':(showTotal?'final page':'continued')}`:''}</div>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt">
+      <thead><tr style="background:#f1f3f5">
+        <th style="text-align:left;border:1px solid #94a3b8;padding:6px 5px;width:17%">SKU</th>
+        <th style="text-align:left;border:1px solid #94a3b8;padding:6px 5px;width:39%">Item</th>
+        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:9%">Qty</th>
+        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:17%">Unit Price</th>
+        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:18%">Amount</th>
+      </tr></thead><tbody>${itemRows}</tbody>
+    </table>
+    ${showTotal?`<div style="margin:12px 0 0 auto;width:75%;border-top:2px solid #111;padding-top:8px;text-align:right;font-size:9pt"><div>Total Quantity: <strong>${cartImageTotalItems}</strong></div><div style="font-size:14pt;font-weight:900;margin-top:5px">Order Total: ${escapeHtml(money(total))}</div></div>`:`<div style="margin-top:8px;text-align:right;font-size:8pt;color:#64748b">Items continue on the next page.</div>`}
+    <footer style="margin-top:auto;padding-top:10px;border-top:1px solid #ddd;font-size:8pt;color:#555">Thank you for your order · TM DISTRIBUTORS</footer>
+  </section>`;
+}
+function downloadOrderImageBlob(blob,filename){
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function tmOrderImageBusyLayer(){
+  const shade=document.createElement('div');
+  shade.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(17,24,39,.62);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Arial,sans-serif;';
+  shade.innerHTML='<div style="background:#fff;color:#111;border-radius:14px;max-width:320px;padding:20px 22px;text-align:center;box-shadow:0 10px 40px #0005"><div style="font-size:17px;font-weight:800">Preparing A4 Order Image</div><div style="font-size:13px;color:#555;margin-top:8px">Creating high-quality A4 image(s). Please keep this page open…</div></div>';
+  document.body.appendChild(shade);return shade;
+}
+function tmCanvasToBlob(canvas,type,quality){
+  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not encode the order image.')),type,quality));
+}
+function tmStampForOrderImage(){
+  const now=new Date();
+  return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0'),'-',String(now.getHours()).padStart(2,'0'),String(now.getMinutes()).padStart(2,'0')].join('');
+}
+async function sendOrderAsImage(){
+  const {rows,total}=cartRows();
+  if(!rows.length){alert('Your order is empty.');return;}
+  const customerInput=(document.getElementById('cust')?.value||'').trim();
+  const addressInput=(document.getElementById('addr')?.value||'').trim();
+  const customerName=CATALOG_CUSTOMER||customerInput||'Not given';
+  const button=document.getElementById('sendOrderImageBtn');
+  if(button){button.disabled=true;button.textContent='PREPARING A4 IMAGE…';}
+  let shade=null,stage=null;
+  try{
+    await loadTmOrderImageLibs();
+    if(typeof window.html2canvas!=='function')throw new Error('Image rendering library is unavailable.');
+    shade=tmOrderImageBusyLayer();
+    const pageSize=12;
+    const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
+    const orderDate=new Date().toLocaleString();
+    const totalItems=rows.reduce((a,r)=>a+Number(r.q||0),0);
+    stage=document.createElement('div');
+    stage.id='tmOrderImageCaptureStage';
+    stage.style.cssText='position:fixed;left:0;top:0;z-index:2147483646;width:190mm;margin:0;padding:0;background:#fff;color:#111;pointer-events:none;overflow:visible;';
+    stage.setAttribute('aria-hidden','true');
+    document.body.appendChild(stage);
+    cartImageTotalItems=totalItems;
+    const stamp=tmStampForOrderImage();
+    const imageFiles=[];
+    for(let pageIndex=0;pageIndex<pageCount;pageIndex++){
+      const chunk=rows.slice(pageIndex*pageSize,(pageIndex+1)*pageSize);
+      stage.innerHTML=tmOrderImagePageHtml(chunk,total,customerName,addressInput,orderDate,pageIndex,pageCount,pageIndex===pageCount-1);
+      const pageNode=stage.firstElementChild;
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      const renderedCanvas=await window.html2canvas(pageNode,{
+        scale:2,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
+        scrollX:0,scrollY:0,
+        windowWidth:Math.max(window.innerWidth,Math.ceil(pageNode.getBoundingClientRect().width+24)),
+        windowHeight:Math.max(window.innerHeight,Math.ceil(pageNode.scrollHeight+24))
+      });
+      if(!renderedCanvas||renderedCanvas.width<300||renderedCanvas.height<300)throw new Error('Order image was empty. Please retry in Chrome.');
+      // Exact A4 portrait raster size at ~150 dpi. Fit the full order page inside white A4 margins.
+      const A4_W=1240,A4_H=1754,padding=48;
+      const a4=document.createElement('canvas');a4.width=A4_W;a4.height=A4_H;
+      const ctx=a4.getContext('2d');if(!ctx)throw new Error('Could not prepare the A4 image canvas.');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,A4_W,A4_H);
+      ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+      const ratio=Math.min((A4_W-padding*2)/renderedCanvas.width,(A4_H-padding*2)/renderedCanvas.height);
+      const drawW=renderedCanvas.width*ratio,drawH=renderedCanvas.height*ratio;
+      ctx.drawImage(renderedCanvas,(A4_W-drawW)/2,(A4_H-drawH)/2,drawW,drawH);
+      const blob=await tmCanvasToBlob(a4,'image/jpeg',0.94);
+      if(!(blob instanceof Blob)||blob.size<1000)throw new Error('The generated A4 image appears to be empty.');
+      const suffix=pageCount>1?`-Page-${String(pageIndex+1).padStart(2,'0')}`:'';
+      const filename=`TM-Order-${stamp}${suffix}.jpg`;
+      const file=(typeof File==='function')?new File([blob],filename,{type:'image/jpeg'}):null;
+      if(!file)throw new Error('This browser cannot package the order image. Please try Chrome.');
+      imageFiles.push(file);
+      a4.width=1;a4.height=1;renderedCanvas.width=1;renderedCanvas.height=1;
+    }
+    let canShareFiles=false;
+    if(imageFiles.length&&navigator.share&&navigator.canShare){try{canShareFiles=navigator.canShare({files:imageFiles});}catch(_error){canShareFiles=false;}}
+    if(canShareFiles){
+      try{
+        await navigator.share({files:imageFiles,title:'TM DISTRIBUTORS Order',text:'Order image — A4 size'});
+        return;
+      }catch(shareError){
+        if(shareError&&shareError.name==='AbortError')return;
+        console.warn('Image sharing unavailable; downloading the A4 image(s).',shareError);
+      }
+    }
+    // Fallback for browsers without image sharing: download every page image for manual WhatsApp attachment.
+    for(const file of imageFiles)downloadOrderImageBlob(file,file.name);
+    alert(`${imageFiles.length===1?'A4 order image has':'A4 order images have'} been created and downloaded. Attach ${imageFiles.length===1?'the image':'the images'} in WhatsApp to send. Your cart has been kept.`);
+  }catch(error){
+    console.error('A4 order image generation failed:',error);
+    alert('Could not create the A4 order image. Check the internet connection and try again in Chrome. Your cart has been kept.');
+  }finally{
+    if(stage)stage.remove();
+    if(shade)shade.remove();
+    if(button){button.disabled=false;button.textContent='SEND ORDER AS IMAGE';}
+    cartImageTotalItems=0;
+  }
+}
+// Load the image renderer early when possible; retry automatically when the image button is tapped.
+preloadTmOrderImageLibs();
+
+
 // Image-based A4 order PDF. Render each invoice page to a canvas first, then place that image on an A4 PDF page.
 // This avoids the blank-page issue caused by capturing a far-offscreen HTML element.
 let tmOrderPdfLibsPromise=null;
 let cartPdfTotalItems=0;
-function tmLoadScript(src,ready){
-  if(ready())return Promise.resolve();
-  return new Promise((resolve,reject)=>{
-    const script=document.createElement('script');
-    script.src=src;script.async=true;script.crossOrigin='anonymous';
-    script.onload=()=>ready()?resolve():reject(new Error('PDF library did not initialize: '+src));
-    script.onerror=()=>reject(new Error('Could not load PDF library: '+src));
-    document.head.appendChild(script);
-  });
-}
 function loadTmOrderPdfLibs(){
   if(typeof window.html2canvas==='function'&&window.jspdf&&typeof window.jspdf.jsPDF==='function')return Promise.resolve();
   if(tmOrderPdfLibsPromise)return tmOrderPdfLibsPromise;
   tmOrderPdfLibsPromise=(async()=>{
-    await tmLoadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
+    await loadTmOrderImageLibs();
     await tmLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>!!(window.jspdf&&typeof window.jspdf.jsPDF==='function'));
   })().catch(err=>{tmOrderPdfLibsPromise=null;throw err;});
   return tmOrderPdfLibsPromise;
@@ -603,6 +751,7 @@ async function sendOrderAsPDF(){
 }
 // Warm the libraries in the background; failures are retried when the user taps the PDF button.
 preloadTmOrderPdfLibs();
+
 
 function sendWhatsAppOrder(){
  const {rows,total}=cartRows();if(!rows.length){alert('Your order is empty.');return}
