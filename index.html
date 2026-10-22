@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- TM-DISTRIBUTOR-CART-CONTROLS: 2026-10-22-v2 -->
+<!-- TM-DISTRIBUTOR-CART-CONTROLS: 2026-10-22-v2 + ORDER-PDF -->
 
 <!-- TM Enterprise cart-leave persistence fix: 2026-10-22 -->
 <!-- TM Enterprise WhatsApp handoff clears cart: 2026-10-22 -->
@@ -51,6 +51,10 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 .cart-confirm-details p{margin:5px 0}
 .cart-confirm-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
 .cart-confirm-actions button{border-radius:10px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;min-width:76px}
+.empty-cart-password{margin-top:12px}
+.empty-cart-password label{display:block;margin-bottom:4px;font-size:13px;font-weight:800;color:#374151}
+.empty-cart-password .field{margin-top:4px}
+.password-error{margin-top:6px;color:#b91c1c;font-size:12px;font-weight:700;line-height:1.35}
 .cart-confirm-ok{border:1px solid var(--red);background:var(--red);color:#fff}
 .cart-confirm-cancel{border:1px solid #d1d5db;background:#f3f4f6;color:#222}
 .exit-confirm-bg{z-index:230}
@@ -73,6 +77,12 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 .cart-item-actions .qtyrow .cart-qty-input{width:60px;min-width:60px;height:34px;padding:0 4px;text-align:center;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#111;font-size:16px;font-weight:800;outline:none;appearance:textfield;-moz-appearance:textfield}
 .cart-item-actions .qtyrow .cart-qty-input:focus{border-color:var(--red);box-shadow:0 0 0 2px #b91c1c22}
 .cart-item-actions .qtyrow .cart-qty-input::-webkit-outer-spin-button,.cart-item-actions .qtyrow .cart-qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.order-action-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.order-action-buttons .whats,.order-action-buttons .pdf-order-btn{width:100%;margin-top:0;min-height:48px;border:0;border-radius:11px;padding:12px;font-size:14px;font-weight:900;cursor:pointer}
+.order-action-buttons .whats{background:#1f9d55;color:#fff}
+.pdf-order-btn{background:#1f2937;color:#fff}
+.pdf-order-btn:disabled{opacity:.65;cursor:wait}
+@media(max-width:520px){.order-action-buttons{grid-template-columns:1fr}.order-action-buttons .whats,.order-action-buttons .pdf-order-btn{min-height:46px}}
 .remove-cart-item{border:1px solid #efb5b5;background:#fff;color:#b91c1c;border-radius:9px;padding:8px 10px;font-size:12px;font-weight:800;cursor:pointer}
 .remove-cart-item:active,.empty-cart-btn:active{transform:translateY(1px)}
 @media(max-width:420px){.cart-item-actions{align-items:flex-start}.cart-item-actions .qtyrow{width:100%}.remove-cart-item{margin-left:auto}}
@@ -102,7 +112,7 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
 <main id="grid" class="grid"></main>
 </div>
 <div id="cartbar" class="cartbar"><b id="cartSummary">0 items</b><button onclick="openCart()">VIEW ORDER</button></div>
-<div id="modalbg" class="modalbg" onclick="if(event.target===this)closeModal()"><div class="modal" role="dialog" aria-modal="true" aria-label="Product variants or order"><button class="close modal-top-close" onclick="closeModal()" aria-label="Close">×</button><div id="modalcontent" class="modalcontent"></div><div id="modalfooter" class="modalfooter"><button class="close modal-bottom-close" onclick="closeModal()" aria-label="Close variants">Close</button><button id="modalAction" class="whats modal-action" onclick="openCart()">VIEW ORDER &amp; WHATSAPP</button></div></div></div>
+<div id="modalbg" class="modalbg" onclick="if(event.target===this)closeModal()"><div class="modal" role="dialog" aria-modal="true" aria-label="Product variants or order"><button class="close modal-top-close" onclick="closeModal()" aria-label="Close">×</button><div id="modalcontent" class="modalcontent"></div><div id="modalfooter" class="modalfooter"><button class="close modal-bottom-close" onclick="closeModal()" aria-label="Add selected quantities and go back">Add / Back</button><button id="modalAction" class="whats modal-action" onclick="openCart()">VIEW ORDER &amp; WHATSAPP</button></div></div></div>
 <div id="cartConfirmBg" class="cart-confirm-bg" style="display:none" role="presentation">
   <div class="cart-confirm-card" role="dialog" aria-modal="true" aria-labelledby="cartConfirmQuestion" aria-describedby="cartConfirmDetails">
     <div id="cartConfirmQuestion" class="cart-confirm-question">Add selected quantities to your cart?</div>
@@ -117,6 +127,11 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
   <div class="cart-confirm-card" role="dialog" aria-modal="true" aria-labelledby="emptyCartConfirmQuestion" aria-describedby="emptyCartConfirmDetails">
     <div id="emptyCartConfirmQuestion" class="cart-confirm-question">Empty the entire cart?</div>
     <div id="emptyCartConfirmDetails" class="cart-confirm-details">This will remove every item from your current order. This action cannot be undone.</div>
+    <div class="empty-cart-password">
+      <label for="emptyCartPassword">Password required to empty cart</label>
+      <input id="emptyCartPassword" class="field" type="password" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter password" onkeydown="if(event.key==='Enter'){event.preventDefault();resolveEmptyCart(true)}">
+      <div id="emptyCartPasswordError" class="password-error" role="alert" style="display:none"></div>
+    </div>
     <div class="cart-confirm-actions">
       <button type="button" class="cart-confirm-cancel" onclick="resolveEmptyCart(false)">Cancel</button>
       <button type="button" class="cart-confirm-ok" onclick="resolveEmptyCart(true)">Empty Cart</button>
@@ -354,7 +369,7 @@ function openCartView(){
  persistCartState();
  const {rows,total}=cartRows();
  const rowHtml=rows.map(r=>`<div class="varrow"><div class="varmain"><div><div class="varname">${escapeHtml(r.v.name)}</div><div class="varsub">${escapeHtml(r.p.name)} · SKU ${escapeHtml(r.v.code)}</div></div><div class="varprice">${money(r.line)}<div class="varstock order-qty-meta">${r.q} × ${money(r.v.price)}</div></div></div><div class="cart-item-actions"><div class="qtyrow"><span class="qtylabel">Quantity</span><button type="button" aria-label="Decrease quantity" onclick="setCartQty('${escapeAttr(r.sku)}',${Number(r.idx)},${Number(r.q)-1})" ${Number(r.q)<=1?'disabled':''}>−</button><input class="cart-qty-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${Math.max(0,Math.floor(Number(r.v.stock)||0))}" step="1" aria-label="Quantity for ${escapeAttr(r.v.code)}" value="${Number(r.q)}" onchange="setCartQty('${escapeAttr(r.sku)}',${Number(r.idx)},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"><button type="button" aria-label="Increase quantity" onclick="setCartQty('${escapeAttr(r.sku)}',${Number(r.idx)},${Number(r.q)+1})" ${Number(r.q)>=Number(r.v.stock||0)?'disabled':''}>+</button></div><button type="button" class="remove-cart-item" onclick="removeCartItem('${escapeAttr(r.sku)}',${Number(r.idx)})" aria-label="Remove ${escapeAttr(r.v.code)} from cart">Remove item</button></div></div>`).join('');
- document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>MY ORDER</h2><div class="modalmeta">Edit quantities, remove items individually, or clear the whole cart.</div></div>${rows.length?`<div class="cart-order-tools"><button type="button" class="empty-cart-btn" onclick="confirmEmptyCart()">EMPTY CART</button></div>${rowHtml}<div class="orderbox"><div class="orderrow"><span>Total items</span><b>${rows.reduce((a,r)=>a+r.q,0)}</b></div><div class="orderrow grand"><span>Order Total</span><b>${money(total)}</b></div><input id="cust" class="field" placeholder="Customer / Shop name"><textarea id="addr" class="field" rows="3" placeholder="Delivery address / message"></textarea><button class="whats" onclick="sendWhatsAppOrder()">SEND ORDER VIA WHATSAPP</button></div>`:`<div class="empty">Your order is empty.</div>`}`;
+ document.getElementById('modalcontent').innerHTML=`<div class="modalhead"><h2>MY ORDER</h2><div class="modalmeta">Edit quantities, remove items individually, or clear the whole cart.</div></div>${rows.length?`<div class="cart-order-tools"><button type="button" class="empty-cart-btn" onclick="confirmEmptyCart()">EMPTY CART</button></div>${rowHtml}<div class="orderbox"><div class="orderrow"><span>Total items</span><b>${rows.reduce((a,r)=>a+r.q,0)}</b></div><div class="orderrow grand"><span>Order Total</span><b>${money(total)}</b></div><input id="cust" class="field" placeholder="Customer / Shop name"><textarea id="addr" class="field" rows="3" placeholder="Delivery address / message"></textarea><div class="order-action-buttons"><button class="whats" type="button" onclick="sendWhatsAppOrder()">SEND ORDER VIA WHATSAPP</button><button class="pdf-order-btn" id="sendOrderPdfBtn" type="button" onclick="sendOrderAsPDF()">SEND ORDER AS PDF</button></div></div>`:`<div class="empty">Your order is empty.</div>`}`;
  document.getElementById('modalbg').style.display='flex';
  document.getElementById('modalfooter').style.display='none';
  document.getElementById('modalcontent').scrollTop=0;
@@ -362,11 +377,30 @@ function openCartView(){
 }
 function confirmEmptyCart(){
   if(!Object.values(cart||{}).some(q=>Number(q)>0))return;
+  const pass=document.getElementById('emptyCartPassword');
+  const error=document.getElementById('emptyCartPasswordError');
+  if(pass)pass.value='';
+  if(error){error.textContent='';error.style.display='none';}
   document.getElementById('emptyCartConfirmBg').style.display='flex';
 }
 function resolveEmptyCart(clear){
-  document.getElementById('emptyCartConfirmBg').style.display='none';
-  if(!clear)return;
+  const bg=document.getElementById('emptyCartConfirmBg');
+  const pass=document.getElementById('emptyCartPassword');
+  const error=document.getElementById('emptyCartPasswordError');
+  if(!clear){
+    bg.style.display='none';
+    if(pass)pass.value='';
+    if(error){error.textContent='';error.style.display='none';}
+    return;
+  }
+  if(String(pass?.value||'').trim()!=='aaa'){
+    if(error){error.textContent='Incorrect password. Cart has not been cleared.';error.style.display='block';}
+    if(pass){pass.focus();pass.select();}
+    return;
+  }
+  bg.style.display='none';
+  if(pass)pass.value='';
+  if(error){error.textContent='';error.style.display='none';}
   cart={};
   pendingVariantQty=null;
   persistCartState();
@@ -424,6 +458,152 @@ function setCartQty(sku,idx,q){
  if(newAddressField)newAddressField.value=previousAddress;
  if(newContent)newContent.scrollTop=previousScroll;
 }
+// Image-based A4 order PDF. Render each invoice page to a canvas first, then place that image on an A4 PDF page.
+// This avoids the blank-page issue caused by capturing a far-offscreen HTML element.
+let tmOrderPdfLibsPromise=null;
+let cartPdfTotalItems=0;
+function tmLoadScript(src,ready){
+  if(ready())return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src=src;script.async=true;script.crossOrigin='anonymous';
+    script.onload=()=>ready()?resolve():reject(new Error('PDF library did not initialize: '+src));
+    script.onerror=()=>reject(new Error('Could not load PDF library: '+src));
+    document.head.appendChild(script);
+  });
+}
+function loadTmOrderPdfLibs(){
+  if(typeof window.html2canvas==='function'&&window.jspdf&&typeof window.jspdf.jsPDF==='function')return Promise.resolve();
+  if(tmOrderPdfLibsPromise)return tmOrderPdfLibsPromise;
+  tmOrderPdfLibsPromise=(async()=>{
+    await tmLoadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
+    await tmLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>!!(window.jspdf&&typeof window.jspdf.jsPDF==='function'));
+  })().catch(err=>{tmOrderPdfLibsPromise=null;throw err;});
+  return tmOrderPdfLibsPromise;
+}
+function preloadTmOrderPdfLibs(){loadTmOrderPdfLibs().catch(()=>{});}
+function tmOrderPdfPageHtml(rows,total,customerName,address,orderDate,pageIndex,pageCount,showTotal){
+  const itemRows=rows.map((r,i)=>`<tr style="break-inside:avoid;page-break-inside:avoid">
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere">${escapeHtml(r.v.code||'')}</td>
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere"><strong>${escapeHtml(r.v.name||r.p.name||'')}</strong>${r.p.name&&r.p.name!==(r.v.name||'')?`<br><span style="font-size:8pt;color:#64748b">${escapeHtml(r.p.name)}</span>`:''}</td>
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top">${Number(r.q)||0}</td>
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top;white-space:nowrap">${escapeHtml(money(r.v.price))}</td>
+    <td style="border:1px solid #cbd5e1;padding:6px 5px;text-align:right;vertical-align:top;white-space:nowrap">${escapeHtml(money(r.line))}</td>
+  </tr>`).join('');
+  const customerCode=String(CATALOG_CUSTOMER_CODE||'').trim();
+  const discount=Number(CATALOG_DISCOUNT||0);
+  const itemCount=rows.reduce((a,r)=>a+Number(r.q||0),0);
+  return `<section class="tm-pdf-page" style="width:190mm;min-height:277mm;box-sizing:border-box;background:#fff;color:#111;padding:0;font-family:Arial,Helvetica,sans-serif;font-size:9pt;line-height:1.32;display:flex;flex-direction:column;overflow-wrap:anywhere">
+    <header style="border-bottom:3px solid #b91c1c;padding:0 0 8px;margin:0 0 10px">
+      <div style="font-size:20pt;font-weight:900;line-height:1.15;color:#b91c1c">TM DISTRIBUTORS</div>
+      <div style="font-size:13pt;font-weight:800;margin-top:3px">ORDER SUMMARY</div>
+      <div style="font-size:8.5pt;color:#555;margin-top:4px">Date: ${escapeHtml(orderDate)} &nbsp; | &nbsp; Page ${pageIndex+1} of ${pageCount}</div>
+    </header>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:10px;font-size:8.5pt">
+      <tr><td style="width:50%;vertical-align:top;padding:2px 8px 5px 0;overflow-wrap:anywhere"><strong>Customer / Shop</strong><br>${escapeHtml(customerName||'Not given')}</td><td style="width:50%;vertical-align:top;padding:2px 0 5px 8px;overflow-wrap:anywhere">${customerCode?`<strong>Customer Code</strong><br>${escapeHtml(customerCode)}`:''}${discount?`<br><strong>Customer Discount:</strong> ${discount}%`:''}</td></tr>
+      <tr><td colspan="2" style="vertical-align:top;padding-top:5px;overflow-wrap:anywhere"><strong>Delivery Address / Message</strong><br>${escapeHtml(address||'Not given').replace(/\n/g,'<br>')}</td></tr>
+    </table>
+    <div style="font-size:10pt;font-weight:800;margin:0 0 5px">Order Items${pageCount>1?` — ${pageIndex===0?'continued on following pages':(showTotal?'final page':'continued')}`:''}</div>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt">
+      <thead><tr style="background:#f1f3f5">
+        <th style="text-align:left;border:1px solid #94a3b8;padding:6px 5px;width:17%">SKU</th>
+        <th style="text-align:left;border:1px solid #94a3b8;padding:6px 5px;width:39%">Item</th>
+        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:9%">Qty</th>
+        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:17%">Unit Price</th>
+        <th style="text-align:right;border:1px solid #94a3b8;padding:6px 5px;width:18%">Amount</th>
+      </tr></thead><tbody>${itemRows}</tbody>
+    </table>
+    ${showTotal?`<div style="margin:12px 0 0 auto;width:75%;border-top:2px solid #111;padding-top:8px;text-align:right;font-size:9pt"><div>Total Quantity: <strong>${cartPdfTotalItems}</strong></div><div style="font-size:14pt;font-weight:900;margin-top:5px">Order Total: ${escapeHtml(money(total))}</div></div>`:`<div style="margin-top:8px;text-align:right;font-size:8pt;color:#64748b">Items continue on the next page.</div>`}
+    <footer style="margin-top:auto;padding-top:10px;border-top:1px solid #ddd;font-size:8pt;color:#555">Thank you for your order · TM DISTRIBUTORS</footer>
+  </section>`;
+}
+function downloadOrderPdfBlob(blob,filename){
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function tmPdfBusyLayer(){
+  const shade=document.createElement('div');
+  shade.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(17,24,39,.62);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Arial,sans-serif;';
+  shade.innerHTML='<div style="background:#fff;color:#111;border-radius:14px;max-width:320px;padding:20px 22px;text-align:center;box-shadow:0 10px 40px #0005"><div style="font-size:17px;font-weight:800">Preparing A4 Order PDF</div><div style="font-size:13px;color:#555;margin-top:8px">Creating an image-based PDF. Please keep this page open…</div></div>';
+  document.body.appendChild(shade);return shade;
+}
+async function sendOrderAsPDF(){
+  const {rows,total}=cartRows();
+  if(!rows.length){alert('Your order is empty.');return;}
+  const customerInput=(document.getElementById('cust')?.value||'').trim();
+  const addressInput=(document.getElementById('addr')?.value||'').trim();
+  const customerName=CATALOG_CUSTOMER||customerInput||'Not given';
+  const button=document.getElementById('sendOrderPdfBtn');
+  if(button){button.disabled=true;button.textContent='PREPARING A4 PDF…';}
+  let shade=null,stage=null;
+  try{
+    await loadTmOrderPdfLibs();
+    const {jsPDF}=window.jspdf;
+    if(typeof window.html2canvas!=='function'||typeof jsPDF!=='function')throw new Error('PDF image libraries are unavailable.');
+    shade=tmPdfBusyLayer();
+    // Capture a reasonable number of order rows per A4 page to keep the image readable.
+    const pageSize=12;
+    const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
+    const orderDate=new Date().toLocaleString();
+    const totalItems=rows.reduce((a,r)=>a+Number(r.q||0),0);
+    stage=document.createElement('div');
+    stage.id='tmOrderPdfCaptureStage';
+    stage.style.cssText='position:fixed;left:0;top:0;z-index:2147483646;width:190mm;margin:0;padding:0;background:#fff;color:#111;pointer-events:none;overflow:visible;';
+    stage.setAttribute('aria-hidden','true');
+    document.body.appendChild(stage);
+    // Used by the HTML builder to show the total quantity on the final page.
+    cartPdfTotalItems=totalItems;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+    for(let pageIndex=0;pageIndex<pageCount;pageIndex++){
+      const chunk=rows.slice(pageIndex*pageSize,(pageIndex+1)*pageSize);
+      stage.innerHTML=tmOrderPdfPageHtml(chunk,total,customerName,addressInput,orderDate,pageIndex,pageCount,pageIndex===pageCount-1);
+      const pageNode=stage.firstElementChild;
+      // Ensure the capture target has a real layout box at the viewport origin. Never render from -10000px.
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      const canvas=await window.html2canvas(pageNode,{
+        scale:2,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
+        scrollX:0,scrollY:0,
+        windowWidth:Math.max(window.innerWidth,Math.ceil(pageNode.getBoundingClientRect().width+24)),
+        windowHeight:Math.max(window.innerHeight,Math.ceil(pageNode.scrollHeight+24))
+      });
+      if(!canvas||canvas.width<300||canvas.height<300)throw new Error('Order image was empty. Please retry in Chrome.');
+      const imageData=canvas.toDataURL('image/jpeg',0.96);
+      if(!imageData||imageData.length<1000)throw new Error('Could not convert order page to an image.');
+      if(pageIndex>0)pdf.addPage('a4','portrait');
+      // A4 with 10 mm white margins. The order page is inserted as a raster image, not selectable text.
+      const maxW=190,maxH=277;
+      const ratio=Math.min(maxW/canvas.width,maxH/canvas.height);
+      const drawW=canvas.width*ratio,drawH=canvas.height*ratio;
+      const x=(210-drawW)/2;
+      pdf.addImage(imageData,'JPEG',x,10,drawW,drawH,`tm-order-page-${pageIndex}`,'FAST');
+    }
+    const blob=pdf.output('blob');
+    if(!(blob instanceof Blob)||blob.size<1000)throw new Error('The A4 PDF appears to be empty.');
+    const now=new Date();
+    const stamp=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0'),'-',String(now.getHours()).padStart(2,'0'),String(now.getMinutes()).padStart(2,'0')].join('');
+    const filename='TM-Order-'+stamp+'.pdf';
+    const pdfFile=(typeof File==='function')?new File([blob],filename,{type:'application/pdf'}):null;
+    if(pdfFile&&navigator.share&&navigator.canShare){
+      let canShareFile=false;try{canShareFile=navigator.canShare({files:[pdfFile]});}catch(_error){}
+      if(canShareFile){
+        try{await navigator.share({files:[pdfFile],title:'TM DISTRIBUTORS Order',text:'Order PDF'});return;}
+        catch(shareError){if(shareError&&shareError.name==='AbortError')return;}
+      }
+    }
+    downloadOrderPdfBlob(blob,filename);
+    alert('A4 order PDF created as an image and downloaded. Attach it in WhatsApp to send. Your cart has been kept.');
+  }catch(error){
+    console.error('Image-based A4 PDF generation failed:',error);
+    alert('Could not create the A4 order PDF. Check the internet connection and try again in Chrome. Your cart has been kept.');
+  }finally{
+    if(stage)stage.remove();
+    if(shade)shade.remove();
+    if(button){button.disabled=false;button.textContent='SEND ORDER AS PDF';}
+    cartPdfTotalItems=0;
+  }
+}
+// Warm the libraries in the background; failures are retried when the user taps the PDF button.
+preloadTmOrderPdfLibs();
+
 function sendWhatsAppOrder(){
  const {rows,total}=cartRows();if(!rows.length){alert('Your order is empty.');return}
  const name=(document.getElementById('cust')?.value||'Not given').trim();const addr=(document.getElementById('addr')?.value||'Not given').trim();
