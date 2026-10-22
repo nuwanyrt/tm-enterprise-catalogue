@@ -349,6 +349,11 @@ let allowUnloadWithoutWarning=false;
 const catalogueOriginalUrl=window.location.href;
 function pushCatalogueBackGuard(){
   try{
+    // Avoid stacking duplicate guard entries when the page is restored from cache.
+    if(history.state&&history.state.tmDistributorCatalogueBackGuard){
+      catalogueBackGuardActive=true;
+      return;
+    }
     history.pushState({tmDistributorCatalogueBackGuard:true, stamp:Date.now()},'',catalogueOriginalUrl);
     catalogueBackGuardActive=true;
   }catch(_error){}
@@ -375,25 +380,30 @@ function showCatalogueExitConfirm(){
   const count=effectiveOrderQuantity();
   const question=document.getElementById('exitConfirmQuestion');
   const detail=document.getElementById('exitConfirmDetails');
-  if(question)question.textContent=count>0?`You have ${count} item${count===1?'':'s'} selected or in your order. Leave the catalogue?`:'Leave the catalogue?';
-  if(detail)detail.textContent=count>0?'Stay to continue shopping. Your selected items are saved in this browser and should remain if you reopen this catalogue, unless browser/site data is cleared.':'Do you want to leave this catalogue?';
-  document.getElementById('exitConfirmBg').style.display='flex';
+  if(question)question.textContent=count>0?`You have ${count} item${count===1?'':'s'} selected or in your order. Leave the catalogue?`:'Are you sure you want to leave this catalogue?';
+  if(detail)detail.textContent=count>0?'Stay to continue shopping. Your cart is saved in this browser and should be restored if you reopen this catalogue, unless browser/site data is cleared.':'Stay on this page to continue browsing, or choose Leave to exit the catalogue.';
+  const bg=document.getElementById('exitConfirmBg');
+  if(bg)bg.style.display='flex';
   exitConfirmOpen=true;
   const stay=document.querySelector('#exitConfirmBg .stay-catalogue');
   if(stay)stay.focus();
 }
 function stayInCatalogue(){
-  document.getElementById('exitConfirmBg').style.display='none';
+  const bg=document.getElementById('exitConfirmBg');
+  if(bg)bg.style.display='none';
   exitConfirmOpen=false;
+  // Re-arm the Android/browser Back guard after choosing Stay.
+  pushCatalogueBackGuard();
 }
 function leaveCatalogue(){
-  document.getElementById('exitConfirmBg').style.display='none';
+  const bg=document.getElementById('exitConfirmBg');
+  if(bg)bg.style.display='none';
   exitConfirmOpen=false;
-  // The shopper already confirmed Leave in our custom dialog; avoid a second browser prompt.
+  // The shopper explicitly confirmed Leave; don't show another native warning.
   allowUnloadWithoutWarning=true;
   window.setTimeout(()=>{allowUnloadWithoutWarning=false;},1500);
-  // The current top entry is the guard and the next entry is this catalogue.
-  // Skip both so one confirmed Leave returns to the page before the catalogue.
+  // Our synthetic guard is immediately above the page's original history entry.
+  // Consume the guard first, then leave the catalogue on the next history step.
   catalogueBackGuardActive=false;
   allowNextBackToLeave=true;
   history.back();
@@ -402,20 +412,18 @@ function handleCataloguePopState(){
   if(allowNextBackToLeave){
     allowNextBackToLeave=false;
     catalogueBackGuardActive=false;
-    // The confirmation already consumed one guard navigation. Complete the
-    // confirmed Leave by returning to the page before this catalogue.
     window.setTimeout(()=>history.back(),0);
     return;
   }
-  if(!catalogueBackGuardActive)return;
 
+  // The Back action has just consumed the guard entry. Re-arm it before showing
+  // any in-page UI so pressing Stay keeps the user on this catalogue.
   const zoomOpen=document.getElementById('zoombg')?.style.display==='block';
   const cartConfirmOpenNow=document.getElementById('cartConfirmBg')?.style.display==='flex';
   const menu=document.getElementById('categoryMenu');
   const menuOpen=!!menu&&!menu.hidden;
   const modalOpen=document.getElementById('modalbg')?.style.display==='flex';
 
-  // Back closes image zoom/filter panels first; it should not leave the page.
   if(zoomOpen||cartConfirmOpenNow||exitConfirmOpen||menuOpen){
     pushCatalogueBackGuard();
     if(zoomOpen){closeImageZoom();return;}
@@ -423,30 +431,27 @@ function handleCataloguePopState(){
     if(menuOpen){closeCategoryMenu();return;}
   }
 
-  // Once any saved or newly selected quantity exists, show the Leave/Stay
-  // confirmation before navigating away, even if the product modal is open.
-  if(effectiveOrderQuantity()>0){
-    pushCatalogueBackGuard();
-    showCatalogueExitConfirm();
-    return;
-  }
-
-  // No order quantities to protect. A normal Back can close an empty modal;
-  // otherwise allow the browser to return to the previous page.
-  if(modalOpen){
+  // Keep familiar in-page navigation: when an empty product/order modal is open,
+  // the first Back closes that modal. A Back from the catalogue then asks to exit.
+  if(modalOpen&&effectiveOrderQuantity()<=0){
     pushCatalogueBackGuard();
     if(modalMode==='variants')closeModal();
     else closeModalWithoutSavingDraft();
     return;
   }
 
-  catalogueBackGuardActive=false;
-  window.setTimeout(()=>history.back(),0);
+  // Always confirm a Back from the catalogue page, even when the cart is empty.
+  // This replaces the browser's uncustomizable native leave message.
+  pushCatalogueBackGuard();
+  showCatalogueExitConfirm();
 }
 function installCatalogueBackGuard(){
   try{
+    if(!window.__tmDistributorBackGuardInstalled){
+      window.addEventListener('popstate',handleCataloguePopState,true);
+      window.__tmDistributorBackGuardInstalled=true;
+    }
     pushCatalogueBackGuard();
-    window.addEventListener('popstate',handleCataloguePopState);
   }catch(_error){}
 }
 // Lock the catalogue page while either the variant/order modal or image zoom is open.
@@ -583,6 +588,9 @@ window.addEventListener('pageshow', function(){
       cart = readPersistentCart();
       render();
     }
+    // Android Back may restore this page from the back-forward cache. Re-arm
+    // the same-page history guard so the next system Back asks for confirmation.
+    if (!catalogueBackGuardActive && !allowNextBackToLeave) pushCatalogueBackGuard();
   } catch (_error) {}
 });
 // The custom in-page confirmation remains active for catalogue Back navigation.
