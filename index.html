@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<!-- TM-DISTRIBUTOR-CART-CONTROLS: 2026-10-22-v2 + ORDER-IMAGE-A4 + ORDER-PDF-A4 -->
+<!-- TM-DISTRIBUTOR-CART-CONTROLS: 2026-10-22-v2 + ORDER-IMAGE-A4 + ORDER-PDF-A4 + NEXT-ORDER-CLEAR-CONFIRM -->
 
 <!-- TM Enterprise cart-leave persistence fix: 2026-10-22 -->
-<!-- TM Enterprise WhatsApp handoff clears cart: 2026-10-22 -->
+<!-- TM Enterprise order handoff keeps cart and asks before the next order: 2026-10-22 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>TM DISTRIBUTORS | Product Catalogue</title>
+<!-- Order export speed update: lower raster scale, async JPEG encoding, temporary canvas cleanup -->
 <!-- Step 30: customer discount badge + separate variant rows -->
 <style>
 *{box-sizing:border-box}
@@ -149,6 +150,16 @@ button,input,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:
     </div>
   </div>
 </div>
+<div id="nextOrderConfirmBg" class="cart-confirm-bg" style="display:none" role="presentation">
+  <div class="cart-confirm-card" role="dialog" aria-modal="true" aria-labelledby="nextOrderConfirmQuestion" aria-describedby="nextOrderConfirmDetails">
+    <div id="nextOrderConfirmQuestion" class="cart-confirm-question">Start a new order?</div>
+    <div id="nextOrderConfirmDetails" class="cart-confirm-details">A previous order is still saved in your cart. Clear the previous order before starting a new one?</div>
+    <div class="cart-confirm-actions">
+      <button type="button" class="cart-confirm-cancel" onclick="resolveNextOrderStart(false)">Keep Previous Cart</button>
+      <button type="button" class="cart-confirm-ok" onclick="resolveNextOrderStart(true)">Clear &amp; Start New Order</button>
+    </div>
+  </div>
+</div>
 <div id="removeItemConfirmBg" class="cart-confirm-bg" style="display:none" role="presentation">
   <div class="cart-confirm-card" role="dialog" aria-modal="true" aria-labelledby="removeItemConfirmQuestion" aria-describedby="removeItemConfirmDetails">
     <div id="removeItemConfirmQuestion" class="cart-confirm-question">Remove this item?</div>
@@ -191,8 +202,32 @@ const CATALOG_CUSTOMER="";
 const CATALOG_CUSTOMER_CODE="";
 const CATALOG_DISCOUNT=Number(0.0);
 // Persist the order and any in-progress variant quantities so a phone refresh does not empty the cart.
+// After any order handoff, preserve its cart until the shopper confirms clearing it for a new order.
 // Scope storage by catalogue path and customer code so different customer catalogues do not share carts.
 const CART_STORAGE_KEY='tmDistributorsCart:v1:'+window.location.pathname+':'+String(CATALOG_CUSTOMER_CODE||CATALOG_CUSTOMER||'PUBLIC').trim().toUpperCase();
+// Keep the current order after WhatsApp/Image/PDF handoff. Ask before a later quantity edit starts a new order.
+const ORDER_HANDOFF_PENDING_KEY=CART_STORAGE_KEY+':order-handoff-pending-clear';
+function readOrderHandoffPendingClear(){try{return window.localStorage.getItem(ORDER_HANDOFF_PENDING_KEY)==='1';}catch(_error){return false;}}
+let orderHandoffPendingClear=readOrderHandoffPendingClear();
+let pendingNextOrderAction=null;
+let pendingNextOrderOnCancel=null;
+function markOrderHandoffPendingClear(){
+  orderHandoffPendingClear=true;
+  try{window.localStorage.setItem(ORDER_HANDOFF_PENDING_KEY,'1');}catch(_error){}
+}
+function clearOrderHandoffPendingClear(){
+  orderHandoffPendingClear=false;
+  try{window.localStorage.removeItem(ORDER_HANDOFF_PENDING_KEY);}catch(_error){}
+}
+function closeOrderViewAfterHandoff(){
+  // Return to the product catalogue without deleting any quantities.
+  const modal=document.getElementById('modalbg');
+  const footer=document.getElementById('modalfooter');
+  if(modal)modal.style.display='none';
+  if(footer)footer.style.display='none';
+  modalMode='closed';active=null;pendingVariantQty=null;
+  persistCartState();syncPageScrollLock();render();
+}
 function readPersistentCart(){
   const clean={};
   try{
@@ -282,12 +317,64 @@ function saveVariantDraftToCart(){
   });
   updateCartUI();
 }
+function shouldConfirmClearPreviousOrder(){
+  return orderHandoffPendingClear && savedCartQuantity()>0;
+}
+function requestClearPreviousOrderThen(action,onCancel){
+  pendingNextOrderAction=typeof action==='function'?action:null;
+  pendingNextOrderOnCancel=typeof onCancel==='function'?onCancel:null;
+  const q=savedCartQuantity();
+  const question=document.getElementById('nextOrderConfirmQuestion');
+  const details=document.getElementById('nextOrderConfirmDetails');
+  if(question)question.textContent='Start a new order?';
+  if(details)details.textContent=`Your previous order (${q} ${q===1?'item':'items'}) is still saved in this cart. Clear it before adding items to a new order? Choose “Keep Previous Cart” to leave the saved order unchanged.`;
+  const bg=document.getElementById('nextOrderConfirmBg');
+  if(bg)bg.style.display='flex';
+}
+function resolveNextOrderStart(clearPrevious){
+  const bg=document.getElementById('nextOrderConfirmBg');
+  if(bg)bg.style.display='none';
+  const action=pendingNextOrderAction;
+  const onCancel=pendingNextOrderOnCancel;
+  pendingNextOrderAction=null;pendingNextOrderOnCancel=null;
+  if(!clearPrevious){
+    if(onCancel)onCancel();
+    return;
+  }
+  const currentSku=(modalMode==='variants'&&active)?String(active.sku):null;
+  cart={};
+  clearOrderHandoffPendingClear();
+  if(currentSku){
+    pendingVariantQty={};
+    persistCartState();
+    showVariants(currentSku,true);
+  }else{
+    pendingVariantQty=null;
+    persistCartState();
+  }
+  updateCartUI();
+  if(action)action();
+}
+function beforeVariantQtyEdit(i,input){
+  if(!shouldConfirmClearPreviousOrder()||!active||modalMode!=='variants')return;
+  const sku=String(active.sku);
+  if(input)input.blur();
+  requestClearPreviousOrderThen(
+    ()=>{const field=document.getElementById('variantQtyInput'+i);if(field){field.focus();field.select();}},
+    ()=>{if(modalMode==='variants'&&active&&String(active.sku)===sku)showVariants(sku,true);}
+  );
+}
 function changeQty(i,d){
   if(!active||modalMode!=='variants'||!pendingVariantQty)return;
   const v=active.variants[i],k=qtyKey(active.sku,i),old=Number(pendingVariantQty[k]||0);
   const max=Math.max(0,Math.floor(Number(v?.stock)||0));
   const next=Math.max(0,Math.min(max,old+d));
   if(next===old)return;
+  if(shouldConfirmClearPreviousOrder()){
+    const sku=String(active.sku);
+    requestClearPreviousOrderThen(()=>changeQty(i,d),()=>{if(modalMode==='variants'&&active&&String(active.sku)===sku)showVariants(sku,true);});
+    return;
+  }
   if(next>0)pendingVariantQty[k]=next;else delete pendingVariantQty[k];
   showVariants(active.sku,true);
 }
@@ -317,7 +404,7 @@ function showVariants(sku,keepOpen=false){
     active=nextActive;
   }
   modalMode='variants';
-  content.innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(active.img||'')}" data-title="${escapeAttr(active.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${active.img?`<img src="${escapeAttr(active.thumb||active.img)}" data-fallback="${escapeAttr(active.img||'')}" onerror="if(!this.dataset.fallbackUsed){this.dataset.fallbackUsed='1';this.src=this.dataset.fallback}" alt="${escapeHtml(active.name)}" loading="lazy" decoding="async" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="variantNo">Variant ${i+1} of ${active.variants.length}</div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${v.normal_price && Number(v.normal_price)>Number(v.price)?`<div class="discountedPrice"><div class="discountLine"><span class="discountBadge">${CATALOG_DISCOUNT}%</span><span class="newPrice">${money(v.price)}</span></div><div class="old">${money(v.normal_price)}</div></div>`:`<div class="newPrice">${money(v.price)}</div>`}<div class="varstock ${v.stock>0?'':'out-of-stock'}">${v.stock>0?`${v.stock} in stock`:'Out of Stock'}</div></div></div>${Number(v.stock||0)>0?`<div class="qtyrow"><span class="qtylabel">Add to Cart</span><button type="button" aria-label="Decrease quantity" onclick="changeQty(${i},-1)">−</button><input class="qty-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${Math.max(0,Math.floor(Number(v.stock)||0))}" step="1" aria-label="Quantity for ${escapeAttr(v.code)}" value="${getQty(active.sku,i)}" oninput="setVariantQtyFromInput(${i},this.value,this)" onkeydown="if(event.key==='Enter'){this.blur()}"><button type="button" aria-label="Increase quantity" onclick="changeQty(${i},1)" ${getQty(active.sku,i)>=Math.max(0,Math.floor(Number(v.stock)||0))?'disabled':''}>+</button></div>`:''}</div>`).join('')}<div class="muted" style="padding:8px 2px 14px">Choose quantities, then use Close or VIEW ORDER & WHATSAPP to decide whether to save them to your order.</div>`;
+  content.innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(active.img||'')}" data-title="${escapeAttr(active.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${active.img?`<img src="${escapeAttr(active.thumb||active.img)}" data-fallback="${escapeAttr(active.img||'')}" onerror="if(!this.dataset.fallbackUsed){this.dataset.fallbackUsed='1';this.src=this.dataset.fallback}" alt="${escapeHtml(active.name)}" loading="lazy" decoding="async" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="variantNo">Variant ${i+1} of ${active.variants.length}</div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${v.normal_price && Number(v.normal_price)>Number(v.price)?`<div class="discountedPrice"><div class="discountLine"><span class="discountBadge">${CATALOG_DISCOUNT}%</span><span class="newPrice">${money(v.price)}</span></div><div class="old">${money(v.normal_price)}</div></div>`:`<div class="newPrice">${money(v.price)}</div>`}<div class="varstock ${v.stock>0?'':'out-of-stock'}">${v.stock>0?`${v.stock} in stock`:'Out of Stock'}</div></div></div>${Number(v.stock||0)>0?`<div class="qtyrow"><span class="qtylabel">Add to Cart</span><button type="button" aria-label="Decrease quantity" onclick="changeQty(${i},-1)">−</button><input id="variantQtyInput${i}" class="qty-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${Math.max(0,Math.floor(Number(v.stock)||0))}" step="1" aria-label="Quantity for ${escapeAttr(v.code)}" value="${getQty(active.sku,i)}" onfocus="beforeVariantQtyEdit(${i},this)" oninput="setVariantQtyFromInput(${i},this.value,this)" onkeydown="if(event.key==='Enter'){this.blur()}"><button type="button" aria-label="Increase quantity" onclick="changeQty(${i},1)" ${getQty(active.sku,i)>=Math.max(0,Math.floor(Number(v.stock)||0))?'disabled':''}>+</button></div>`:''}</div>`).join('')}<div class="muted" style="padding:8px 2px 14px">Choose quantities, then use Close or VIEW ORDER & WHATSAPP to decide whether to save them to your order.</div>`;
   document.getElementById('modalbg').style.display='flex';
   document.getElementById('modalfooter').style.display='flex';
   document.getElementById('modalAction').style.display='block';
@@ -327,6 +414,7 @@ function showVariants(sku,keepOpen=false){
 }
 function updateCartUI(){
   let items=0,total=0;Object.entries(cart).forEach(([k,q])=>{if(!q)return;items+=q;const [sku,idx]=k.split('|');const p=products.find(x=>x.sku===sku);const v=p?.variants[Number(idx)];if(v)total+=Number(v.price||0)*q});
+  if(items===0&&orderHandoffPendingClear)clearOrderHandoffPendingClear();
   document.getElementById('cartCount').textContent=items;document.getElementById('cartSummary').textContent=`${items} item${items===1?'':'s'} · ${money(total)}`;document.getElementById('cartbar').style.display=items?'flex':'none';persistCartState();
 }
 function cartRows(){let rows=[],total=0;Object.entries(cart).forEach(([k,q])=>{if(!q)return;const [sku,idx]=k.split('|');const p=products.find(x=>x.sku===sku);const v=p?.variants[Number(idx)];if(!v)return;const line=Number(v.price||0)*q;total+=line;rows.push({sku,idx,p,v,q,line})});return {rows,total}}
@@ -543,9 +631,9 @@ async function sendOrderAsImage(){
   if(button){button.disabled=true;button.textContent='PREPARING A4 IMAGE…';}
   let shade=null,stage=null;
   try{
+    shade=tmOrderImageBusyLayer();
     await loadTmOrderImageLibs();
     if(typeof window.html2canvas!=='function')throw new Error('Image rendering library is unavailable.');
-    shade=tmOrderImageBusyLayer();
     const pageSize=12;
     const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
     const orderDate=new Date().toLocaleString();
@@ -564,7 +652,7 @@ async function sendOrderAsImage(){
       const pageNode=stage.firstElementChild;
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const renderedCanvas=await window.html2canvas(pageNode,{
-        scale:2,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
+        scale:1.5,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
         scrollX:0,scrollY:0,
         windowWidth:Math.max(window.innerWidth,Math.ceil(pageNode.getBoundingClientRect().width+24)),
         windowHeight:Math.max(window.innerHeight,Math.ceil(pageNode.scrollHeight+24))
@@ -579,7 +667,7 @@ async function sendOrderAsImage(){
       const ratio=Math.min((A4_W-padding*2)/renderedCanvas.width,(A4_H-padding*2)/renderedCanvas.height);
       const drawW=renderedCanvas.width*ratio,drawH=renderedCanvas.height*ratio;
       ctx.drawImage(renderedCanvas,(A4_W-drawW)/2,(A4_H-drawH)/2,drawW,drawH);
-      const blob=await tmCanvasToBlob(a4,'image/jpeg',0.94);
+      const blob=await tmCanvasToBlob(a4,'image/jpeg',0.88);
       if(!(blob instanceof Blob)||blob.size<1000)throw new Error('The generated A4 image appears to be empty.');
       const suffix=pageCount>1?`-Page-${String(pageIndex+1).padStart(2,'0')}`:'';
       const filename=`TM-Order-${stamp}${suffix}.jpg`;
@@ -593,6 +681,8 @@ async function sendOrderAsImage(){
     if(canShareFiles){
       try{
         await navigator.share({files:imageFiles,title:'TM DISTRIBUTORS Order',text:'Order image — A4 size'});
+        markOrderHandoffPendingClear();
+        closeOrderViewAfterHandoff();
         return;
       }catch(shareError){
         if(shareError&&shareError.name==='AbortError')return;
@@ -601,7 +691,9 @@ async function sendOrderAsImage(){
     }
     // Fallback for browsers without image sharing: download every page image for manual WhatsApp attachment.
     for(const file of imageFiles)downloadOrderImageBlob(file,file.name);
-    alert(`${imageFiles.length===1?'A4 order image has':'A4 order images have'} been created and downloaded. Attach ${imageFiles.length===1?'the image':'the images'} in WhatsApp to send. Your cart has been kept.`);
+    markOrderHandoffPendingClear();
+    alert(`${imageFiles.length===1?'A4 order image has':'A4 order images have'} been created and downloaded. Attach ${imageFiles.length===1?'the image':'the images'} in WhatsApp to send. Your cart has been kept. You will be asked before starting the next order.`);
+    closeOrderViewAfterHandoff();
   }catch(error){
     console.error('A4 order image generation failed:',error);
     alert('Could not create the A4 order image. Check the internet connection and try again in Chrome. Your cart has been kept.');
@@ -684,10 +776,10 @@ async function sendOrderAsPDF(){
   if(button){button.disabled=true;button.textContent='PREPARING A4 PDF…';}
   let shade=null,stage=null;
   try{
+    shade=tmPdfBusyLayer();
     await loadTmOrderPdfLibs();
     const {jsPDF}=window.jspdf;
     if(typeof window.html2canvas!=='function'||typeof jsPDF!=='function')throw new Error('PDF image libraries are unavailable.');
-    shade=tmPdfBusyLayer();
     // Capture a reasonable number of order rows per A4 page to keep the image readable.
     const pageSize=12;
     const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
@@ -708,14 +800,17 @@ async function sendOrderAsPDF(){
       // Ensure the capture target has a real layout box at the viewport origin. Never render from -10000px.
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const canvas=await window.html2canvas(pageNode,{
-        scale:2,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
+        scale:1.5,backgroundColor:'#ffffff',useCORS:true,allowTaint:false,logging:false,
         scrollX:0,scrollY:0,
         windowWidth:Math.max(window.innerWidth,Math.ceil(pageNode.getBoundingClientRect().width+24)),
         windowHeight:Math.max(window.innerHeight,Math.ceil(pageNode.scrollHeight+24))
       });
       if(!canvas||canvas.width<300||canvas.height<300)throw new Error('Order image was empty. Please retry in Chrome.');
-      const imageData=canvas.toDataURL('image/jpeg',0.96);
-      if(!imageData||imageData.length<1000)throw new Error('Could not convert order page to an image.');
+      // Encode asynchronously as a moderately compressed JPEG; avoids a large synchronous base64 string.
+      const jpegBlob=await tmCanvasToBlob(canvas,'image/jpeg',0.86);
+      if(!(jpegBlob instanceof Blob)||jpegBlob.size<1000)throw new Error('Could not convert order page to an image.');
+      const imageData=new Uint8Array(await jpegBlob.arrayBuffer());
+      if(!imageData||imageData.byteLength<1000)throw new Error('Could not convert order page to an image.');
       if(pageIndex>0)pdf.addPage('a4','portrait');
       // A4 with 10 mm white margins. The order page is inserted as a raster image, not selectable text.
       const maxW=190,maxH=277;
@@ -723,6 +818,8 @@ async function sendOrderAsPDF(){
       const drawW=canvas.width*ratio,drawH=canvas.height*ratio;
       const x=(210-drawW)/2;
       pdf.addImage(imageData,'JPEG',x,10,drawW,drawH,`tm-order-page-${pageIndex}`,'FAST');
+      // Release the large temporary canvas between pages to reduce memory pressure on phones.
+      canvas.width=1;canvas.height=1;
     }
     const blob=pdf.output('blob');
     if(!(blob instanceof Blob)||blob.size<1000)throw new Error('The A4 PDF appears to be empty.');
@@ -733,12 +830,14 @@ async function sendOrderAsPDF(){
     if(pdfFile&&navigator.share&&navigator.canShare){
       let canShareFile=false;try{canShareFile=navigator.canShare({files:[pdfFile]});}catch(_error){}
       if(canShareFile){
-        try{await navigator.share({files:[pdfFile],title:'TM DISTRIBUTORS Order',text:'Order PDF'});return;}
+        try{await navigator.share({files:[pdfFile],title:'TM DISTRIBUTORS Order',text:'Order PDF'});markOrderHandoffPendingClear();closeOrderViewAfterHandoff();return;}
         catch(shareError){if(shareError&&shareError.name==='AbortError')return;}
       }
     }
     downloadOrderPdfBlob(blob,filename);
-    alert('A4 order PDF created as an image and downloaded. Attach it in WhatsApp to send. Your cart has been kept.');
+    markOrderHandoffPendingClear();
+    alert('A4 order PDF created as an image and downloaded. Attach it in WhatsApp to send. Your cart has been kept. You will be asked before starting the next order.');
+    closeOrderViewAfterHandoff();
   }catch(error){
     console.error('Image-based A4 PDF generation failed:',error);
     alert('Could not create the A4 order PDF. Check the internet connection and try again in Chrome. Your cart has been kept.');
@@ -768,13 +867,9 @@ function sendWhatsAppOrder(){
    return;
  }
  // The browser cannot detect whether the shopper finally pressed Send inside WhatsApp.
- // Clear the web cart after the WhatsApp handoff succeeds so the next order starts empty.
- cart={};pendingVariantQty=null;active=null;modalMode='closed';
- persistCartState();
- document.getElementById('modalbg').style.display='none';
- document.getElementById('modalfooter').style.display='none';
- syncPageScrollLock();
- render();
+ // Keep the order. Ask before clearing it when the shopper starts the next order.
+ markOrderHandoffPendingClear();
+ closeOrderViewAfterHandoff();
 }
 function shareLink(){const url=window.location.href;const msg=`TM DISTRIBUTORS ONLINE CATALOGUE\n\nBrowse our latest products here:\n${url}`;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
 
@@ -864,6 +959,7 @@ function handleCatalogueHashChange(){
   }
   const zoomOpen=document.getElementById('zoombg')?.style.display==='block';
   const cartConfirmOpenNow=document.getElementById('cartConfirmBg')?.style.display==='flex';
+  const nextOrderConfirmOpenNow=document.getElementById('nextOrderConfirmBg')?.style.display==='flex';
   const menu=document.getElementById('categoryMenu');
   const menuOpen=!!menu&&!menu.hidden;
   const modalOpen=document.getElementById('modalbg')?.style.display==='flex';
@@ -872,7 +968,7 @@ function handleCatalogueHashChange(){
   // an in-page panel does not let the next Android Back bypass the catalogue.
   pushCatalogueBackGuard();
   if(zoomOpen){closeImageZoom();return;}
-  if(cartConfirmOpenNow||exitConfirmOpen)return;
+  if(cartConfirmOpenNow||nextOrderConfirmOpenNow||exitConfirmOpen)return;
   if(menuOpen){closeCategoryMenu();return;}
   if(modalOpen&&effectiveOrderQuantity()<=0){
     if(modalMode==='variants')closeModal();
