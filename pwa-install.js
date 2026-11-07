@@ -37,6 +37,32 @@
   addMeta('apple-mobile-web-app-title', 'TM DISTRIBUTOR');
   addMeta('apple-mobile-web-app-status-bar-style', 'black-translucent');
 
+  const standalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  const removeInstallPanels = () => {
+    document.querySelectorAll('#pwaInstallPanel, .tm-pwa-panel, .pwa-install-panel').forEach(node => node.remove());
+  };
+  const removeIfStandalone = () => {
+    if (standalone()) removeInstallPanels();
+  };
+  window.addEventListener('appinstalled', removeInstallPanels);
+  window.addEventListener('pageshow', removeIfStandalone);
+  document.addEventListener('visibilitychange', removeIfStandalone);
+  const standaloneDisplay = window.matchMedia && window.matchMedia('(display-mode: standalone)');
+  if (standaloneDisplay && standaloneDisplay.addEventListener) {
+    standaloneDisplay.addEventListener('change', removeIfStandalone);
+  }
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register(new URL(`${scopePath}service-worker.js`, window.location.origin), { scope: scopePath })
+      .catch(() => {});
+  }
+
+  // In standalone/app mode, remove the whole installation panel (including its status message).
+  if (standalone()) {
+    removeInstallPanels();
+    return;
+  }
+
   if (document.getElementById('pwaInstallPanel')) return;
 
   const style = document.createElement('style');
@@ -61,11 +87,6 @@
   iosInstructions.hidden = !isIos || standalone();
   androidInstructions.hidden = !isAndroid || standalone();
   if (standalone()) status.textContent = 'TM DISTRIBUTOR is open in app mode.';
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(new URL(`${scopePath}service-worker.js`, window.location.origin), { scope: scopePath })
-      .catch(() => { status.textContent = 'The catalogue is online and ready. App installation may be unavailable in this browser.'; });
-  }
 
   let installPrompt = null;
   window.addEventListener('beforeinstallprompt', event => {
@@ -95,7 +116,7 @@
   window.addEventListener('appinstalled', () => {
     button.hidden = true;
     installPrompt = null;
-    status.textContent = 'TM DISTRIBUTOR has been installed. Open it from your Home Screen.';
+    removeInstallPanels();
   });
   if (standalone()) button.hidden = true;
 })();
