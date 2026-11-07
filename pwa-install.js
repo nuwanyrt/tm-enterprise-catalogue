@@ -80,7 +80,6 @@
   const status = panel.querySelector('.tm-pwa-status');
   const iosInstructions = panel.querySelector('.tm-pwa-ios');
   const androidInstructions = panel.querySelector('.tm-pwa-android');
-  const standalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
   const userAgent = navigator.userAgent || '';
   const isIos = /iPhone|iPad|iPod/i.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isAndroid = /Android/i.test(userAgent);
