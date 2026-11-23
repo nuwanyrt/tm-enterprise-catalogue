@@ -854,7 +854,7 @@ function render(){
     const list=baseList.filter(p=>`${p.name} ${p.sku} ${p.brand}`.toLowerCase().includes(q));
     grid.innerHTML=list.length?list.map(p=>{
       const totalStock=productTotalStock(p), inStock=totalStock>0, price=p.variants.length===1?money(p.variants[0].price):`From ${money(Math.min(...p.variants.map(v=>v.price).filter(Boolean)))}`;
-      return `<article class="card"><div class="photo" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(p.img||'')}" data-title="${escapeAttr(p.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${p.img?`<img src="${escapeAttr(p.thumb||p.img)}" data-fallback="${escapeAttr(p.img||'')}" onerror="if(!this.dataset.fallbackUsed){this.dataset.fallbackUsed='1';this.src=this.dataset.fallback}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div><div class="body"><div class="cat">${escapeHtml(p.cat||'')}</div><div class="name">${escapeHtml(p.name)}</div>${p.brand?`<div class="brand">Brand: ${escapeHtml(p.brand)}</div>`:''}<div class="stock">${inStock?`${totalStock} total in stock`:'Out of stock'} · ${p.variants.length} variant${p.variants.length!==1?'s':''}</div><div class="price"><span class="from">${p.variants.length>1?'Starting':'Price'}</span>${price}</div><button class="primary" onclick="showVariants('${p.sku}')">${p.variants.length>1?'CHOOSE VARIANT':'VIEW PRODUCT'}</button></div></article>`}).join(''):`<div class="empty" style="grid-column:1/-1">No products found.</div>`;
+      return `<article class="card"><div class="photo" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(p.img||'')}" data-thumb="${escapeAttr(p.thumb||p.img||'')}" data-title="${escapeAttr(p.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title, this.dataset.thumb)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title, this.dataset.thumb)">${p.img?`<img src="${escapeAttr(p.thumb||p.img)}" data-fallback="${escapeAttr(p.img||'')}" onerror="if(!this.dataset.fallbackUsed){this.dataset.fallbackUsed='1';this.src=this.dataset.fallback}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div><div class="body"><div class="cat">${escapeHtml(p.cat||'')}</div><div class="name">${escapeHtml(p.name)}</div>${p.brand?`<div class="brand">Brand: ${escapeHtml(p.brand)}</div>`:''}<div class="stock">${inStock?`${totalStock} total in stock`:'Out of stock'} · ${p.variants.length} variant${p.variants.length!==1?'s':''}</div><div class="price"><span class="from">${p.variants.length>1?'Starting':'Price'}</span>${price}</div><button class="primary" onclick="showVariants('${p.sku}')">${p.variants.length>1?'CHOOSE VARIANT':'VIEW PRODUCT'}</button></div></article>`}).join(''):`<div class="empty" style="grid-column:1/-1">No products found.</div>`;
   }
   updateCartUI();
 }
@@ -1343,7 +1343,7 @@ function showVariants(sku,keepOpen=false){
     active=nextActive;
   }
   modalMode='variants';
-  content.innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(active.img||'')}" data-title="${escapeAttr(active.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title)">${active.img?`<img src="${escapeAttr(active.thumb||active.img)}" data-fallback="${escapeAttr(active.img||'')}" onerror="if(!this.dataset.fallbackUsed){this.dataset.fallbackUsed='1';this.src=this.dataset.fallback}" alt="${escapeHtml(active.name)}" loading="lazy" decoding="async" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="variantNo">Variant ${i+1} of ${active.variants.length}</div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${v.normal_price && Number(v.normal_price)>Number(v.price)?`<div class="discountedPrice"><div class="discountLine"><span class="discountBadge">${formatVariantDiscount(v)}</span><span class="newPrice">${money(v.price)}</span></div><div class="old">${money(v.normal_price)}</div></div>`:`<div class="newPrice">${money(v.price)}</div>`}<div class="varstock ${v.stock>0?'':'out-of-stock'}">${v.stock>0?`${v.stock} in stock`:'Out of Stock'}</div></div></div>${Number(v.stock||0)>0?`<div class="qtyrow"><span class="qtylabel">Add to Cart</span><button type="button" aria-label="Decrease quantity" onclick="changeQty(${i},-1)">−</button><input id="variantQtyInput${i}" class="qty-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${Math.max(0,Math.floor(Number(v.stock)||0))}" step="1" aria-label="Quantity for ${escapeAttr(v.code)}" value="${getQty(active.sku,i)}" onfocus="beforeVariantQtyEdit(${i},this)" oninput="setVariantQtyFromInput(${i},this.value,this)" onkeydown="if(event.key==='Enter'){this.blur()}"><button type="button" aria-label="Increase quantity" onclick="changeQty(${i},1)" ${getQty(active.sku,i)>=Math.max(0,Math.floor(Number(v.stock)||0))?'disabled':''}>+</button></div>`:''}</div>`).join('')}<div class="muted" style="padding:8px 2px 14px">Choose quantities, then use Close or VIEW ORDER & WHATSAPP to decide whether to save them to your order.</div>`;
+  content.innerHTML=`<div class="modalhead"><h2>${escapeHtml(active.name)}</h2><div class="modalmeta">${active.brand?`Brand: ${escapeHtml(active.brand)} · `:''}Category: ${escapeHtml(active.cat||'-')}</div></div><div class="modalphoto" role="button" tabindex="0" aria-label="Zoom image" data-src="${escapeAttr(active.img||'')}" data-thumb="${escapeAttr(active.thumb||active.img||'')}" data-title="${escapeAttr(active.name||'')}" onclick="openImageZoom(this.dataset.src, this.dataset.title, this.dataset.thumb)" onkeydown="if(event.key==='Enter'||event.key===' ')openImageZoom(this.dataset.src, this.dataset.title, this.dataset.thumb)">${active.img?`<img src="${escapeAttr(active.thumb||active.img)}" data-fallback="${escapeAttr(active.img||'')}" onerror="if(!this.dataset.fallbackUsed){this.dataset.fallbackUsed='1';this.src=this.dataset.fallback}" alt="${escapeHtml(active.name)}" loading="lazy" decoding="async" draggable="false">`:'<div class="ph">NO IMAGE</div>'}</div>${active.variants.map((v,i)=>`<div class="varrow"><div class="varmain"><div><div class="variantNo">Variant ${i+1} of ${active.variants.length}</div><div class="varname">${escapeHtml(v.name)}</div><div class="varsub">SKU: ${escapeHtml(v.code)}${v.size?' · '+escapeHtml(v.size):''}${v.color?' · '+escapeHtml(v.color):''}${v.model?' · '+escapeHtml(v.model):''}</div></div><div class="varprice">${v.normal_price && Number(v.normal_price)>Number(v.price)?`<div class="discountedPrice"><div class="discountLine"><span class="discountBadge">${formatVariantDiscount(v)}</span><span class="newPrice">${money(v.price)}</span></div><div class="old">${money(v.normal_price)}</div></div>`:`<div class="newPrice">${money(v.price)}</div>`}<div class="varstock ${v.stock>0?'':'out-of-stock'}">${v.stock>0?`${v.stock} in stock`:'Out of Stock'}</div></div></div>${Number(v.stock||0)>0?`<div class="qtyrow"><span class="qtylabel">Add to Cart</span><button type="button" aria-label="Decrease quantity" onclick="changeQty(${i},-1)">−</button><input id="variantQtyInput${i}" class="qty-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="${Math.max(0,Math.floor(Number(v.stock)||0))}" step="1" aria-label="Quantity for ${escapeAttr(v.code)}" value="${getQty(active.sku,i)}" onfocus="beforeVariantQtyEdit(${i},this)" oninput="setVariantQtyFromInput(${i},this.value,this)" onkeydown="if(event.key==='Enter'){this.blur()}"><button type="button" aria-label="Increase quantity" onclick="changeQty(${i},1)" ${getQty(active.sku,i)>=Math.max(0,Math.floor(Number(v.stock)||0))?'disabled':''}>+</button></div>`:''}</div>`).join('')}<div class="muted" style="padding:8px 2px 14px">Choose quantities, then use Close or VIEW ORDER & WHATSAPP to decide whether to save them to your order.</div>`;
   document.getElementById('modalbg').style.display='flex';
   document.getElementById('modalfooter').style.display='flex';
   document.getElementById('modalAction').style.display='block';
@@ -2103,16 +2103,32 @@ function fitToScreen(){
   panX=(vw-iw)/2; panY=(vh-ih)/2;
   applyZoom();
 }
-function openImageZoom(src,title){
-  if(!src)return;
+function openImageZoom(src,title,fallbackSrc=''){
+  if(!src && !fallbackSrc)return;
   const {bg,img}=zoomRefs();
+  let primaryUrl, fallbackUrl;
+  try{
+    primaryUrl=new URL(src||fallbackSrc,document.baseURI).href;
+    fallbackUrl=new URL(fallbackSrc||src,document.baseURI).href;
+  }catch(_){return;}
+  let triedFallback=false;
   bg.style.display='block'; syncPageScrollLock();
+  img.style.display='block';
   img.onload=()=>{
-    nativeW=img.naturalWidth||1; nativeH=img.naturalHeight||1;
+    if(!img.naturalWidth || !img.naturalHeight)return;
+    nativeW=img.naturalWidth; nativeH=img.naturalHeight;
     fitToScreen();
   };
-  img.src=src;
-  if(img.complete) img.onload();
+  img.onerror=()=>{
+    if(!triedFallback && fallbackUrl && img.src!==fallbackUrl){
+      triedFallback=true;
+      img.src=fallbackUrl;
+      return;
+    }
+    img.style.display='none';
+  };
+  img.src=primaryUrl;
+  if(img.complete && img.naturalWidth>0) img.onload();
 }
 function closeImageZoom(){document.getElementById('zoombg').style.display='none';syncPageScrollLock();}
 const zi=document.getElementById('zoomimg');
